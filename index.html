@@ -1110,6 +1110,7 @@ function limparMeuOperatorId(){ localStorage.removeItem(MEU_PAIS_KEY); }
 
 let liveCheckins = {}; // {operatorId: {opIdxReal, opIdxCalc, bateu, hora, ts}}
 let checkinsListenerDate = null;
+let checkinsCarregadoUmaVez = false;
 function startCheckinsListener(){
   if(!fbReady) return;
   const key = todayKey();
@@ -1118,8 +1119,27 @@ function startCheckinsListener(){
     fbDb.ref('revezamento_checkins/'+checkinsListenerDate).off();
   }
   checkinsListenerDate = key;
+  checkinsCarregadoUmaVez = false;
   fbDb.ref('revezamento_checkins/'+key).on('value', snap=>{
-    liveCheckins = snap.val() || {};
+    const novo = snap.val() || {};
+    // avisa em tempo real quando alguém entra e confirma/corrige a posição —
+    // só depois da primeira carga, pra não avisar de tudo que já existia
+    if(checkinsCarregadoUmaVez){
+      const roster = getRoster();
+      Object.keys(novo).forEach(id=>{
+        const antes = liveCheckins[id];
+        const depois = novo[id];
+        if(!antes || antes.ts !== depois.ts){
+          const o = findOperator(roster, Number(id));
+          if(o){
+            const txt = depois.opIdxReal===-1 ? "marcou fora do revezamento" : (depois.bateu ? "confirmou a posição" : "marcou outra operação");
+            toast(`🙋 ${o.name} ${txt} — ${depois.hora}`);
+          }
+        }
+      });
+    }
+    liveCheckins = novo;
+    checkinsCarregadoUmaVez = true;
     renderAll();
   });
 }
@@ -1790,10 +1810,18 @@ function renderHome(st){
     for(let opIdx=0; opIdx<OPERATIONS.length; opIdx++){
       const posto = findPostoForOperacao(opIdx, shift, eventos, assignment, roster);
       const operator = posto>=0 ? resolveOperacaoPosto(posto, shift, eventos, assignment, roster).operator : null;
+      const chk = operator ? liveCheckins[operator.id] : null;
+      const chkBadge = chk
+        ? (chk.bateu
+            ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}</span>`
+            : chk.opIdxReal===-1
+              ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
+              : `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou outro lugar ${chk.hora}</span>`)
+        : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);margin-left:4px;">⏳ aguardando</span>`;
       html += operator ? `<div class="op-card" onclick="abrirPosto(${posto})">
         <div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
         <div class="opname">${OPERATIONS[opIdx]}</div>
-        <span class="badgeop">Operação ${opIdx+1} · começa às ${st.nextSlot.time}</span>
+        <span class="badgeop">Operação ${opIdx+1} · começa às ${st.nextSlot.time}</span>${chkBadge}
       </div>` : `<div class="op-card vago"><div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago — ninguém escalado</div></div>`;
     }
     setInnerHtmlIfChanged(grid, html);
@@ -1814,7 +1842,9 @@ function renderHome(st){
     const chkBadge = chk
       ? (chk.bateu
           ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}</span>`
-          : `<span class="badgeop" style="background:rgba(213,0,0,.18);color:var(--red);margin-left:4px;">⚠️ operador diz que está em outro lugar</span>`)
+          : chk.opIdxReal===-1
+            ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
+            : `<span class="badgeop" style="background:rgba(213,0,0,.18);color:var(--red);margin-left:4px;">⚠️ operador diz que está em outro lugar</span>`)
       : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);margin-left:4px;">⏳ aguardando confirmação</span>`;
     html += `<div class="op-card" onclick="abrirPosto(${p})">
       <div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
