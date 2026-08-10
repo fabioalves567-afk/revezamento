@@ -143,6 +143,12 @@ main{max-width:720px;margin:0 auto;padding:16px;}
 }
 .op-card:active{transform:scale(.97);}
 .op-card .flagname{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin-bottom:6px;}
+/* variante "picker" — só escolher um país/identidade, sem info extra embaixo (ex: Minha Posição) */
+.op-card.pais-picker{display:flex;align-items:center;padding:12px 14px;}
+.op-card.pais-picker .flagname{margin-bottom:0;font-size:14px;}
+.op-card.pais-picker img.flag{width:28px;height:20px;border-radius:4px;}
+.op-card.pais-picker.sel{border-color:var(--vw-cyan);background:rgba(0,180,255,.12);}
+.op-card.sel{border-color:var(--vw-cyan);border-width:2px;}
 img.flag{width:24px;height:18px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px var(--img-outline);flex-shrink:0;}
 img.flag.sm{width:20px;height:15px;}
 img.flag.lg{width:34px;height:25px;}
@@ -278,7 +284,7 @@ nav.bottom button.active{color:var(--vw-cyan);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button id="modoSwitchBtn" onclick="abrirTrocaModo()" style="background:var(--glass);border:1px solid var(--glass-brd);color:var(--txt);height:34px;padding:0 10px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;">🔁 <span id="modoSwitchLabel">Modo</span></button>
+      <button id="modoSwitchBtn" onclick="abrirTrocaModo()" style="position:relative;background:var(--glass);border:1px solid var(--glass-brd);color:var(--txt);height:34px;padding:0 10px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;">🔁 <span id="modoSwitchLabel">Modo</span><span id="modoAlertDot" style="display:none;position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg);"></span></button>
       <button id="themeToggle" onclick="toggleTheme()" style="background:var(--glass);border:1px solid var(--glass-brd);color:var(--txt);width:34px;height:34px;border-radius:10px;font-size:15px;cursor:pointer;">🌙</button>
       <div class="clock-box">
         <div class="time" id="clockTime">--:--:--</div>
@@ -303,7 +309,7 @@ nav.bottom button.active{color:var(--vw-cyan);}
   <button data-s="trocas" onclick="goScreen('trocas')"><span class="ic">🛠️</span>Ajustes</button>
   <button data-s="equipe" onclick="goScreen('equipe')"><span class="ic">👥</span>Equipe</button>
   <button data-s="historico" onclick="goScreen('historico')"><span class="ic">🕘</span>Histórico</button>
-  <button data-s="painel" onclick="goScreen('painel')"><span class="ic">📊</span>Painel</button>
+  <button data-s="painel" onclick="goScreen('painel')" style="position:relative;"><span class="ic">📊</span>Painel<span id="navDotPainel" style="display:none;position:absolute;top:2px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--red);"></span></button>
 </nav>
 </div>
 
@@ -357,9 +363,11 @@ nav.bottom button.active{color:var(--vw-cyan);}
 
   <!-- ================= MINHA POSIÇÃO (check-in do operador) ================= -->
   <section class="screen" id="screen-minhaposicao">
-    <div class="card" id="mpEscolhaCard" style="display:none;">
-      <h2>Quem é você?</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Toque no seu país uma vez — o app lembra da próxima vez que você abrir.</p>
+    <div class="card" id="mpEscolhaCard">
+      <h2>Posição atual de cada país</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:6px;">Toque no seu país pra confirmar ou corrigir sua operação. Por padrão todo mundo aparece "Fora do revezamento" até confirmar.</p>
+      <p style="font-size:11px;color:var(--txt-dim);margin-bottom:10px;">✅ confirmado pelo próprio operador · ⚠️ marcado em operação diferente da calculada</p>
+      <div id="mpFirebaseAviso" style="display:none;font-size:11.5px;color:var(--yellow);margin-bottom:10px;">⚠️ Firebase ainda não configurado neste arquivo — o check-in só funciona neste aparelho, não sincroniza com os colegas.</div>
       <div class="grid-countries" id="mpEscolhaGrid"></div>
     </div>
 
@@ -369,21 +377,14 @@ nav.bottom button.active{color:var(--vw-cyan);}
       <div id="mpSemPosto" class="empty" style="display:none;"></div>
       <div id="mpAcoes" style="display:none;">
         <button class="btn btn-primary" id="mpConfirmarBtn" onclick="submitCheckin(mpOpCalculada, null, false, mpCtx)">✅ Confirmar</button>
-        <button class="btn btn-ghost" onclick="toggleCorrecaoBox()">📍 Não, estou em outro lugar</button>
+        <button class="btn btn-ghost" id="mpCorrecaoToggleBtn" onclick="toggleCorrecaoBox()">📍 Não, estou em outro lugar</button>
         <div id="mpCorrecaoBox" style="display:none;margin-top:12px;">
-          <div class="section-title">Selecione onde você está de verdade</div>
+          <div class="section-title" id="mpCorrecaoLabel">Selecione onde você está de verdade</div>
           <div class="grid-countries" id="mpCorrecaoGrid" style="grid-template-columns:1fr;"></div>
         </div>
       </div>
       <div id="mpUltimoCheckin" style="margin-top:12px;font-size:11.5px;color:var(--txt-dim);text-align:center;"></div>
       <button class="btn btn-ghost" style="margin-top:14px;" onclick="trocarMeuPais()">🔁 Trocar meu país</button>
-    </div>
-
-    <div class="card">
-      <h2>Como todo mundo está agora</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">✅ confirmado pelo próprio operador · ⚠️ operador marcou outro lugar · ⏳ aguardando confirmação</p>
-      <div id="mpFirebaseAviso" style="display:none;font-size:11.5px;color:var(--yellow);margin-bottom:10px;">⚠️ Firebase ainda não configurado neste arquivo — o check-in só funciona neste aparelho, não sincroniza com os colegas.</div>
-      <div class="grid-countries" id="mpTodosGrid"></div>
     </div>
   </section>
 
@@ -556,6 +557,11 @@ nav.bottom button.active{color:var(--vw-cyan);}
         <div class="kpi"><div class="v" id="pTrocas">0</div><div class="l">Trocas hoje</div></div>
         <div class="kpi"><div class="v" id="pOperadores">20</div><div class="l">Operadores</div></div>
       </div>
+    </div>
+    <div class="card">
+      <h2>✅ Quem já confirmou a posição hoje</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Lista de todo mundo que fez check-in hoje, mais recente primeiro.</p>
+      <div id="pCheckinsHoje"></div>
     </div>
     <div class="card">
       <h2>⚠️ Divergências de posição agora</h2>
@@ -1117,6 +1123,7 @@ function startCheckinsListener(){
     renderAll();
   });
 }
+
 function shiftAtual(){
   const st = getCurrentState();
   return st.slot ? st.slot.shift : (st.nextSlot ? st.nextSlot.shift : 0);
@@ -1162,6 +1169,36 @@ function calcOperacaoDoOperador(operatorId, ctx){
   const {opIdx} = resolveOperacaoPosto(posto, ctx.shift, eventos, assignment, roster, ctx.data);
   return {posto, opIdx, ctx};
 }
+
+// Cache de check-ins de uma data que NÃO é hoje (pra saber quem já marcou o quê
+// num dia futuro, tipo quando alguém confirma pro próximo dia de trabalho).
+// O dia de hoje já é coberto por liveCheckins (listener sempre ativo).
+let liveCheckinsAlvo = {};
+let alvoListenerDate = null;
+function startAlvoListener(dataKey){
+  if(!fbReady || dataKey === todayKey()) return;
+  if(alvoListenerDate === dataKey) return;
+  if(alvoListenerDate && fbDb) fbDb.ref('revezamento_checkins/'+alvoListenerDate).off();
+  alvoListenerDate = dataKey;
+  fbDb.ref('revezamento_checkins/'+dataKey).on('value', snap=>{
+    liveCheckinsAlvo = snap.val() || {};
+    renderAll();
+  });
+}
+function getCheckinsAlvo(ctx){
+  const dataKey = todayKey(ctx.data);
+  return dataKey === todayKey() ? liveCheckins : liveCheckinsAlvo;
+}
+// Mostra (sem bloquear) quem já marcou aquela operação pra mesma data — visível
+// pra todo mundo, mas continua permitindo que outro operador escolha a mesma se precisar.
+function badgeOperacaoJaMarcada(opIdx, ctx, excludeId){
+  const checkinsMap = getCheckinsAlvo(ctx);
+  const roster = getRoster();
+  const entry = Object.entries(checkinsMap||{}).find(([id,c])=> c && c.opIdxReal===opIdx && Number(id)!==excludeId);
+  if(!entry) return "";
+  const o = findOperator(roster, Number(entry[0]));
+  return o ? `<span class="badgeop" style="background:rgba(255,214,0,.16);color:var(--yellow);margin-left:6px;">já marcado: ${o.name}</span>` : "";
+}
 function submitCheckin(opIdxReal, operatorIdParam, porMonitor, ctxParam){
   const myId = operatorIdParam!=null ? operatorIdParam : getMeuOperatorId();
   if(myId===null) return;
@@ -1181,12 +1218,12 @@ function submitCheckin(opIdxReal, operatorIdParam, porMonitor, ctxParam){
   const msgOk = hojeAgora
     ? (bateu ? "✅ Posição confirmada!" : "📍 Posição corrigida — todos já veem")
     : (bateu ? `✅ Confirmado para ${ctx.label}` : `📍 Registrado para ${ctx.label}`);
+  if(hojeAgora) liveCheckins[myId] = payload; // atualiza a tela na hora — não espera a nuvem confirmar
   if(fbReady){
     fbDb.ref('revezamento_checkins/'+dataKey+'/'+myId).set(payload)
       .then(()=> toast(msgOk))
       .catch(()=> toast("⚠️ Sem conexão — não sincronizou agora"));
   } else {
-    if(hojeAgora) liveCheckins[myId] = payload;
     toast(hojeAgora ? (bateu ? "✅ Confirmado (só neste aparelho — Firebase não configurado)" : "📍 Corrigido (só neste aparelho — Firebase não configurado)") : `${msgOk} (só neste aparelho — Firebase não configurado)`);
   }
   document.getElementById("mpCorrecaoBox") && (document.getElementById("mpCorrecaoBox").style.display="none");
@@ -1210,6 +1247,20 @@ function escolherMeuPais(operatorId){
   setMeuOperatorId(operatorId);
   toast("País selecionado! Confirme sua posição sempre que mudar de operação.");
   renderAll();
+}
+// Toque num card da grade "Posição atual de cada país": se ainda não escolheu
+// quem é, esse toque já define. Se já escolheu, só rola até a área de confirmar
+// quando for o próprio país — tocar no país de outra pessoa não muda nada
+// (evita trocar de identidade sem querer; pra isso existe "Trocar meu país").
+function tocarCardPosicao(operatorId){
+  const myId = getMeuOperatorId();
+  if(myId===null){ escolherMeuPais(operatorId); return; }
+  if(operatorId===myId){
+    const card = document.getElementById("mpConfirmCard");
+    if(card && typeof card.scrollIntoView === "function"){
+      try{ card.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
+    }
+  }
 }
 function trocarMeuPais(){
   limparMeuOperatorId();
@@ -1355,21 +1406,43 @@ function renderMinhaPosicao(){
   const escolhaCard = document.getElementById("mpEscolhaCard");
   const confirmCard = document.getElementById("mpConfirmCard");
 
+  // Grade "Posição atual de cada país" — sempre visível. Não usa mais o cálculo
+  // automático como valor mostrado: por padrão todo mundo aparece "Fora do
+  // revezamento" até a própria pessoa confirmar (ou o monitor confirmar por ela
+  // em Monitor → País → Check-in manual).
+  escolhaCard.style.display = "";
+  const comChk = [], semChk = [];
+  roster.forEach(o=>{
+    const chk = liveCheckins[o.id];
+    if(chk) comChk.push({o, chk}); else semChk.push({o});
+  });
+  comChk.sort((a,b)=> a.chk.opIdxReal - b.chk.opIdxReal);
+  const cardsHtml = comChk.map(({o,chk})=>{
+    const fora = chk.opIdxReal===-1;
+    const cor = fora ? "var(--red)" : (chk.bateu ? "var(--green)" : "var(--yellow)");
+    const txt = fora ? `🚫 marcado às ${chk.hora}` : (chk.bateu ? `✅ confirmado às ${chk.hora}` : `⚠️ marcado às ${chk.hora}`);
+    return `<div class="op-card${o.id===myId?" sel":""}" onclick="tocarCardPosicao(${o.id})">
+      <div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+      <div class="opname">${opLabel(chk.opIdxReal)}</div>
+      <span class="badgeop" style="background:${cor}22;color:${cor};">${txt}</span>
+    </div>`;
+  }).join("") + semChk.map(({o})=>`
+    <div class="op-card${o.id===myId?" sel":""}" onclick="tocarCardPosicao(${o.id})">
+      <div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+      <div class="opname" style="color:var(--txt-dim);">Fora do revezamento</div>
+    </div>`).join("");
+  setInnerHtmlIfChanged(document.getElementById("mpEscolhaGrid"), cardsHtml);
+
   if(myId===null || !findOperator(roster, myId)){
-    escolhaCard.style.display = "";
     confirmCard.style.display = "none";
-    document.getElementById("mpEscolhaGrid").innerHTML = roster.map(o=>`
-      <div class="op-card" onclick="escolherMeuPais(${o.id})">
-        <div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
-      </div>`).join("");
     return;
   }
-  escolhaCard.style.display = "none";
   confirmCard.style.display = "";
 
   const operator = findOperator(roster, myId);
   const ctx = getContextoPosicao();
   mpCtx = ctx;
+  startAlvoListener(todayKey(ctx.data));
   const {posto, opIdx} = calcOperacaoDoOperador(myId, ctx);
   mpOpCalculada = opIdx;
   const meuCard = document.getElementById("mpMeuCard");
@@ -1382,19 +1455,32 @@ function renderMinhaPosicao(){
   const btnTxt = ctx.tipo==="atual" ? "✅ Sim, é minha posição atual" : "✅ Confirmar para esse horário";
 
   if(posto < 0 || opIdx===null){
-    meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div><div class="opname">Sem escalação prevista para ${ctx.tipo==="atual"?"agora":ctx.label} (ausência, folga ou fora do revezamento).</div>`;
-    semPosto.style.display = "";
-    semPosto.textContent = "Nada para confirmar no momento.";
-    acoes.style.display = "none";
+    meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div><div class="opname">Sem escalação calculada para ${ctx.tipo==="atual"?"agora":ctx.label} (ausência, folga ou fora do revezamento). Você ainda pode marcar manualmente onde está.</div>`;
+    semPosto.style.display = "none";
+    acoes.style.display = "";
+    document.getElementById("mpConfirmarBtn").style.display = "none";
+    document.getElementById("mpCorrecaoToggleBtn").style.display = "none";
+    document.getElementById("mpCorrecaoLabel").textContent = `Selecione a operação em que você está/vai estar (${ctx.tipo==="atual"?"agora":ctx.label})`;
+    document.getElementById("mpCorrecaoBox").style.display = "";
+    setInnerHtmlIfChanged(document.getElementById("mpCorrecaoGrid"),
+      `<div class="op-card" onclick="submitCheckin(-1, null, false, mpCtx)" style="border-color:var(--red);"><div class="opname">🚫 Fora do revezamento</div></div>` +
+      OPERATIONS.map((nome,i)=>`
+      <div class="op-card" onclick="submitCheckin(${i}, null, false, mpCtx)"><div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div></div>`).join(""));
   } else {
     meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
       <div class="opnow">${perguntaTxt}</div>
       <div class="opname" style="font-size:14px;font-weight:700;color:var(--txt);margin-top:4px;">${opLabel(opIdx)}</div>`;
     semPosto.style.display = "none";
     acoes.style.display = "";
+    document.getElementById("mpConfirmarBtn").style.display = "";
     document.getElementById("mpConfirmarBtn").textContent = btnTxt;
-    document.getElementById("mpCorrecaoGrid").innerHTML = OPERATIONS.map((nome,i)=>`
-      <div class="op-card" onclick="submitCheckin(${i}, null, false, mpCtx)"><div class="opname">${opLabel(i)}</div></div>`).join("");
+    document.getElementById("mpCorrecaoToggleBtn").style.display = "";
+    document.getElementById("mpCorrecaoLabel").textContent = "Selecione onde você está de verdade";
+    document.getElementById("mpCorrecaoBox").style.display = "none";
+    setInnerHtmlIfChanged(document.getElementById("mpCorrecaoGrid"),
+      `<div class="op-card" onclick="submitCheckin(-1, null, false, mpCtx)" style="border-color:var(--red);"><div class="opname">🚫 Fora do revezamento</div></div>` +
+      OPERATIONS.map((nome,i)=>`
+      <div class="op-card" onclick="submitCheckin(${i}, null, false, mpCtx)"><div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div></div>`).join(""));
   }
 
   const meuCheckin = liveCheckins[myId];
@@ -1408,42 +1494,29 @@ function renderMinhaPosicao(){
   } else {
     info.textContent = "Você ainda não confirmou sua posição hoje.";
   }
-
-  renderTodosGrid();
 }
-function renderTodosGrid(){
-  const grid = document.getElementById("mpTodosGrid");
-  if(!grid) return;
-  const st = getCurrentState();
-  if(st.status==="folga" || st.status==="antes" || st.status==="encerrado"){
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">Sem turno ativo agora.</div>`;
+
+function renderCheckinsHoje(){
+  const roster = getRoster();
+  const list = document.getElementById("pCheckinsHoje");
+  if(!list) return;
+  const checkins = Object.entries(liveCheckins)
+    .map(([id,chk]) => ({operator: findOperator(roster, Number(id)), chk}))
+    .filter(x=>x.operator && x.chk)
+    .sort((a,b)=> (b.chk.ts||0) - (a.chk.ts||0));
+  if(!checkins.length){
+    list.innerHTML = `<div class="empty">Ninguém confirmou a posição ainda hoje.</div>`;
     return;
   }
-  const roster = getRoster(), assignment = getAssignment(), eventos = getTodayEventos();
-  const shift = st.slot.shift;
-  let html = "";
-  for(let opIdx=0; opIdx<OPERATIONS.length; opIdx++){
-    const p = findPostoForOperacao(opIdx, shift, eventos, assignment, roster);
-    const {operator} = p>=0 ? resolveOperacaoPosto(p, shift, eventos, assignment, roster) : {operator:null};
-    if(!operator){
-      html += `<div class="op-card vago"><div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago</div></div>`;
-      continue;
-    }
-    const chk = liveCheckins[operator.id];
-    const chkBadge = chk
-      ? (chk.bateu
-          ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);">✅ ${chk.hora}</span>`
-          : `<span class="badgeop" style="background:rgba(213,0,0,.18);color:var(--red);">⚠️ outro lugar</span>`)
-      : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);">⏳ aguardando</span>`;
-    html += `<div class="op-card">
-      <div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
-      <div class="opname">${OPERATIONS[opIdx]}</div>
-      ${chkBadge}
-    </div>`;
-  }
-  grid.innerHTML = html;
+  list.innerHTML = `<div style="font-size:11.5px;color:var(--txt-dim);margin-bottom:8px;">${checkins.length} de ${roster.length} operadores já confirmaram</div>` +
+    checkins.map(({operator,chk})=>`
+    <div class="row">
+      <span><img class="flag sm" src="${operator.flag}" alt="${operator.name}"> ${operator.name}</span>
+      <span style="font-size:11.5px;color:var(--txt-dim);text-align:right;">
+        ${chk.bateu ? "✅" : "⚠️"} ${opLabel(chk.opIdxReal)}<br>${chk.hora}${chk.porMonitor?" · pelo monitor":""}
+      </span>
+    </div>`).join("");
 }
-
 function renderDivergencias(){
   const roster = getRoster();
   const list = document.getElementById("pDivergencias");
@@ -1472,7 +1545,7 @@ function fmtHM(mins){
   const h=Math.floor(mins/60), m=Math.floor(mins%60);
   return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
 }
-function opLabel(opIdx){ return `${opIdx+1}. ${OPERATIONS[opIdx]}`; }
+function opLabel(opIdx){ return opIdx===-1 ? "🚫 Fora do revezamento" : `${opIdx+1}. ${OPERATIONS[opIdx]}`; }
 
 let toastTimer=null;
 function toast(msg){
@@ -1723,7 +1796,7 @@ function renderHome(st){
         <span class="badgeop">Operação ${opIdx+1} · começa às ${st.nextSlot.time}</span>
       </div>` : `<div class="op-card vago"><div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago — ninguém escalado</div></div>`;
     }
-    grid.innerHTML = html;
+    setInnerHtmlIfChanged(grid, html);
     document.getElementById("kpiTrocas").textContent = eventos.length;
     document.getElementById("kpiTurno").textContent = "Aguardando";
     document.getElementById("pTrocas").textContent = eventos.length;
@@ -1749,7 +1822,7 @@ function renderHome(st){
       <span class="badgeop">Operação ${opIdx+1}${operator.allowedOps?" · restrito":""}${pulou?" · 🔀 pulou reserva":""}</span>${chkBadge}
     </div>`;
   }
-  grid.innerHTML = html;
+  setInnerHtmlIfChanged(grid, html);
 
   document.getElementById("kpiTrocas").textContent = eventos.length;
   document.getElementById("kpiTurno").textContent = st.status==="ativo"?"Ativo":st.status==="jantar"?"Jantar":st.status==="antes"?"Aguardando":"Encerrado";
@@ -1846,6 +1919,13 @@ function motivoLabel(m){
 function setSelectHtmlIfChanged(sel, html){
   if(sel.innerHTML !== html) sel.innerHTML = html;
 }
+// Mesma lógica do fix de flicker dos <select>, mas pra grades de botões (país,
+// operação). Sem isso, o tick de 1s reconstrói o HTML por baixo do dedo durante
+// o toque, e em vários celulares isso cancela o clique silenciosamente — parece
+// que "não aconteceu nada" às vezes, de forma intermitente (bug real encontrado).
+function setInnerHtmlIfChanged(el, html){
+  if(el && el.innerHTML !== html) el.innerHTML = html;
+}
 function populateOperatorSelect(sel, list, includeEmpty){
   const html = (includeEmpty ? `<option value="">Selecione...</option>` : "") +
     list.map(o=>`<option value="${o.id}">${o.name}${o.motivo?` (${motivoLabel(o.motivo)})`:''}</option>`).join("");
@@ -1927,6 +2007,17 @@ function refreshHorarioSelect(){
   const resumo = document.getElementById("horarioResumo");
   if(resumo) resumo.textContent = isHoje ? "" : `Prévia de ${fmtDataBR(dataInput.value)} — ainda sem trocas/calibrações feitas nesse dia`;
 }
+// Lista de horários pra popular os selects de "a partir de". Usa os horários de
+// hoje quando hoje tem expediente; se hoje é folga (sábado não marcado, domingo),
+// usa os horários do próximo dia de trabalho — senão o select ficava vazio e
+// travava a confirmação (bug real: acontecia sempre que se tentava escalar/trocar
+// num dia sem expediente).
+function getWorkSlotsReferencia(){
+  const hoje = getWorkSlots();
+  if(hoje.length) return hoje;
+  const ctx = getContextoPosicao();
+  return getWorkSlots(ctx.data);
+}
 function ensureSelectsFilled(){
   const selOperacao = document.getElementById("selOperacao");
   if(!selOperacao.options.length){
@@ -1934,11 +2025,11 @@ function ensureSelectsFilled(){
   }
   const trocaHora = document.getElementById("trocaHora");
   if(!trocaHora.options.length){
-    trocaHora.innerHTML = getWorkSlots().map(s=>`<option value="${s.shift}" data-time="${s.time}">${s.time}</option>`).join("");
+    trocaHora.innerHTML = getWorkSlotsReferencia().map(s=>`<option value="${s.shift}" data-time="${s.time}">${s.time}</option>`).join("");
   }
   const escalarHora = document.getElementById("escalarHora");
   if(!escalarHora.options.length){
-    escalarHora.innerHTML = getWorkSlots().map(s=>`<option value="${s.shift}" data-time="${s.time}">${s.time}</option>`).join("");
+    escalarHora.innerHTML = getWorkSlotsReferencia().map(s=>`<option value="${s.shift}" data-time="${s.time}">${s.time}</option>`).join("");
   }
   const allowedOpsChips = document.getElementById("allowedOpsChips");
   if(allowedOpsChips && !allowedOpsChips.children.length){
@@ -2015,8 +2106,10 @@ function renderPais(){
           : `⚠️ Marcado em "${opLabel(chk.opIdxReal)}" às ${chk.hora}${chk.porMonitor?" (pelo monitor)":""}, diferente do cálculo`)
       : "⏳ Ainda não confirmado.";
     document.getElementById("paisConfirmarManualBtn").textContent = `✅ Confirmar em: ${opLabel(opAgora)}`;
-    document.getElementById("paisCorrecaoManualGrid").innerHTML = OPERATIONS.map((nome,i)=>`
-      <div class="op-card" onclick="submitCheckin(${i}, ${id}, true)"><div class="opname">${opLabel(i)}</div></div>`).join("");
+    setInnerHtmlIfChanged(document.getElementById("paisCorrecaoManualGrid"),
+      `<div class="op-card" onclick="submitCheckin(-1, ${id}, true)" style="border-color:var(--red);"><div class="opname">🚫 Fora do revezamento</div></div>` +
+      OPERATIONS.map((nome,i)=>`
+      <div class="op-card" onclick="submitCheckin(${i}, ${id}, true)"><div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, {data:dataAlvo}, id)}</div></div>`).join(""));
   } else {
     checkinCard.style.display = "none";
   }
@@ -2621,7 +2714,7 @@ function agendarAusencia(){
   const lista = loadAusencias();
   lista.push({
     id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
-    operatorId, motivo: ausMotivo, inicio, fim,
+    operatorId: operadorId, motivo: ausMotivo, inicio, fim,
     createdAt: new Date().toISOString()
   });
   saveAusencias(lista);
@@ -3157,6 +3250,9 @@ function onToggleSabado(key){
 }
 
 function toggleFullscreen(){
+  // iOS Safari nunca implementou essa API pra elementos comuns — sem essa checagem,
+  // o botão quebrava com erro no console em todo iPhone, sem fazer nada visível.
+  if(!document.documentElement.requestFullscreen){ toast("Tela cheia não é suportada neste navegador"); return; }
   if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
   else{ document.exitFullscreen(); }
 }
@@ -3199,9 +3295,17 @@ function checkAlertaTroca(st){
 /* =========================================================
    RENDER MASTER
 ========================================================= */
+function updateAlertDots(){
+  const divergentes = Object.values(liveCheckins||{}).filter(c=>c && c.bateu===false).length;
+  const dotPainel = document.getElementById("navDotPainel");
+  const dotModo = document.getElementById("modoAlertDot");
+  if(dotPainel) dotPainel.style.display = divergentes>0 ? "" : "none";
+  if(dotModo) dotModo.style.display = divergentes>0 ? "" : "none";
+}
 function renderAll(){
   ensureSelectsFilled();
   startCheckinsListener();
+  updateAlertDots();
   const st = renderClockAndCountdown();
   const active = document.querySelector(".screen.active").id;
   if(active==="screen-home") renderHome(st);
@@ -3214,7 +3318,7 @@ function renderAll(){
   if(active==="screen-trocas"){ refreshDynamicSelects(); renderTrocasHoje(); }
   if(active==="screen-historico") renderHistorico();
   if(active==="screen-equipe"){ refreshDynamicSelects(); renderBanco(); renderEquipeAtiva(); renderAusencias(); }
-  if(active==="screen-painel"){ document.getElementById("pOperadores").textContent = getRoster().length; renderAgendaSabados(); renderDivergencias(); }
+  if(active==="screen-painel"){ document.getElementById("pOperadores").textContent = getRoster().length; renderAgendaSabados(); renderCheckinsHoje(); renderDivergencias(); }
   checkAlertaTroca(st);
 }
 
