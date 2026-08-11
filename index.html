@@ -302,11 +302,7 @@ nav.bottom button.active{color:var(--vw-cyan);}
 
 <nav class="bottom" id="nav-monitor" style="display:none;">
   <button data-s="home" class="active" onclick="goScreen('home')"><span class="ic">🏠</span>Início</button>
-  <button data-s="cronograma" onclick="goScreen('cronograma')"><span class="ic">📋</span>Cronograma</button>
   <button data-s="pais" onclick="goScreen('pais')"><span class="ic">🌍</span>País</button>
-  <button data-s="horario" onclick="goScreen('horario')"><span class="ic">⏰</span>Horário</button>
-  <button data-s="operacao" onclick="goScreen('operacao')"><span class="ic">⚙️</span>Operação</button>
-  <button data-s="trocas" onclick="goScreen('trocas')"><span class="ic">🛠️</span>Ajustes</button>
   <button data-s="equipe" onclick="goScreen('equipe')"><span class="ic">👥</span>Equipe</button>
   <button data-s="historico" onclick="goScreen('historico')"><span class="ic">🕘</span>Histórico</button>
   <button data-s="painel" onclick="goScreen('painel')" style="position:relative;"><span class="ic">📊</span>Painel<span id="navDotPainel" style="display:none;position:absolute;top:2px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--red);"></span></button>
@@ -357,8 +353,6 @@ nav.bottom button.active{color:var(--vw-cyan);}
       <h2>Posição atual de cada país</h2>
       <div class="grid-countries" id="homeGrid"></div>
     </div>
-
-    <button class="btn btn-ghost" onclick="goScreen('cronograma')">📋 Ver cronograma completo</button>
   </section>
 
   <!-- ================= MINHA POSIÇÃO (check-in do operador) ================= -->
@@ -402,198 +396,6 @@ nav.bottom button.active{color:var(--vw-cyan);}
     <div class="card">
       <h2 id="mhAgendaTitulo">Agenda do dia</h2>
       <div id="mhAgenda"></div>
-    </div>
-  </section>
-
-  <!-- ================= CRONOGRAMA ================= -->
-  <section class="screen" id="screen-cronograma">
-    <div class="card">
-      <h2>Cronograma completo do turno</h2>
-      <input type="date" id="cronoData" onchange="renderCronograma()">
-      <div id="cronoResumo" style="text-align:center;font-size:12px;color:var(--txt-dim);margin:6px 0 10px;"></div>
-      <div class="scrollx tablewrap">
-        <table id="cronoTable"></table>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="window.print()">🖨️ Imprimir / PDF</button>
-      <button class="btn btn-primary" onclick="gerarImagem('cronograma')">📸 Enviar imagem</button>
-    </div>
-  </section>
-
-  <!-- ================= CALENDÁRIO (revezamento antecipado) ================= -->
-  <!-- ================= CONSULTA PAÍS ================= -->
-  <section class="screen" id="screen-pais">
-    <div class="card">
-      <h2>Consulta por país</h2>
-      <select id="selPais" onchange="renderPais()"></select>
-      <input type="date" id="paisData" onchange="renderPais()">
-      <div id="paisResumo" class="kpi-grid" style="margin-top:4px;"></div>
-    </div>
-    <div class="card">
-      <h2 id="paisAgendaTitulo">Agenda do dia</h2>
-      <div id="paisAgenda"></div>
-    </div>
-    <div class="card" id="paisCheckinManualCard" style="display:none;">
-      <h2>Check-in manual</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Use quando o operador não tem celular à mão ou não confirmou sozinho.</p>
-      <div id="paisCheckinManualStatus" style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;"></div>
-      <button class="btn btn-primary" id="paisConfirmarManualBtn" onclick="confirmarCheckinManual()">✅ Confirmar posição calculada por ele</button>
-      <button class="btn btn-ghost" onclick="toggleCorrecaoManualBox()">📍 Colocar em outra operação</button>
-      <div id="paisCorrecaoManualBox" style="display:none;margin-top:12px;">
-        <div class="section-title">Selecione a operação real</div>
-        <div class="grid-countries" id="paisCorrecaoManualGrid" style="grid-template-columns:1fr;"></div>
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="gerarImagem('pais')">📸 Enviar sequência do dia</button>
-  </section>
-
-  <!-- ================= CONSULTA HORÁRIO ================= -->
-  <section class="screen" id="screen-horario">
-    <div class="card">
-      <h2>Consulta por horário</h2>
-      <input type="date" id="horarioData" onchange="refreshHorarioSelect(); renderHorario()">
-      <select id="selHorario" onchange="renderHorario()"></select>
-      <div id="horarioResumo" style="text-align:center;font-size:12px;color:var(--txt-dim);margin:6px 0 10px;"></div>
-      <div id="horarioList"></div>
-    </div>
-    <button class="btn btn-primary" onclick="gerarImagem('horario')">📸 Enviar imagem deste horário</button>
-  </section>
-
-  <!-- ================= CONSULTA OPERAÇÃO ================= -->
-  <section class="screen" id="screen-operacao">
-    <div class="card">
-      <h2>Consulta por operação</h2>
-      <select id="selOperacao" onchange="renderOperacao()"></select>
-      <div id="operacaoAgora" class="kpi-grid" style="margin-top:4px;"></div>
-    </div>
-    <div class="card">
-      <h2>Histórico da operação no turno</h2>
-      <div id="operacaoHist"></div>
-    </div>
-  </section>
-
-  <!-- ================= TROCAS / CALIBRAÇÃO / CONFIGURAÇÃO ================= -->
-  <section class="screen" id="screen-trocas">
-    <div class="subtabs">
-      <button id="tabTroca" class="active" onclick="setAjusteTab('troca')">🔀 Troca entre países</button>
-      <button id="tabConfig" onclick="setAjusteTab('config')">🧭 Configurar sequência</button>
-    </div>
-
-    <div id="painelTroca">
-      <div class="card">
-        <h2>Realizar troca entre países</h2>
-        <select id="trocaA"></select>
-        <div class="swap-vs">🔁 troca com</div>
-        <select id="trocaB"></select>
-        <div class="section-title">A partir de</div>
-        <select id="trocaHora"></select>
-        <input type="text" id="trocaObs" placeholder="Observação (opcional)">
-        <button class="btn btn-primary" onclick="pedirConfirmacaoTroca()">Confirmar troca</button>
-      </div>
-    </div>
-
-    <div id="painelConfig" style="display:none;">
-      <div class="card" id="configPickerCard">
-        <h2>Configurar a sequência de hoje, operação por operação</h2>
-        <p style="font-size:12px;color:var(--txt-dim);margin-bottom:12px;">
-          Vai passando pelas 20 operações na ordem (começando pelo Sequenciamento do Eixo Traseiro). Em cada uma,
-          toque na bandeira do país que está lá agora e confirme — a próxima operação já abre em seguida.
-        </p>
-        <div id="configProgress" style="text-align:center;font-size:12px;color:var(--txt-dim);margin-bottom:8px;"></div>
-        <div id="configOpTitle" style="text-align:center;font-size:19px;font-weight:800;margin-bottom:14px;"></div>
-        <div class="grid-countries" id="configGrid"></div>
-        <div id="configDone" class="empty" style="display:none;">✅ Sequência de hoje configurada — todas as 20 operações têm um país confirmado.</div>
-        <div id="configSalvarPadraoBox" style="display:none;">
-          <div class="section-title">Vigora a partir de</div>
-          <input type="date" id="baseSeqData" onchange="refreshBaseSeqHoraOptions()">
-          <div class="section-title">No horário</div>
-          <select id="baseSeqHora"></select>
-          <button class="btn btn-primary" onclick="salvarSequenciaPadrao()">📌 Definir esta sequência como padrão</button>
-          <p style="font-size:11.5px;color:var(--txt-dim);margin-top:8px;">
-            A partir dessa data e horário, o cálculo do revezamento passa a começar sempre por essa sequência —
-            até você definir uma sequência padrão nova.
-          </p>
-        </div>
-        <div id="baseSeqAtualInfo" style="font-size:11.5px;color:var(--txt-dim);text-align:center;margin-top:10px;"></div>
-      </div>
-      <div class="card" id="configFeitasCard" style="display:none;">
-        <h2>Sequência completa</h2>
-        <p style="font-size:12px;color:var(--txt-dim);margin-bottom:12px;">
-          Toque numa já configurada pra apagar e escolher outro país. Toque numa pendente (⚠️) pra configurá-la agora.
-        </p>
-        <div id="configFeitasList"></div>
-      </div>
-      <button class="btn btn-ghost" onclick="reiniciarConfigWizard()">🔄 Reiniciar configuração (apaga tudo)</button>
-    </div>
-
-    <div class="card" id="eventosHojeCard">
-      <h2>Ajustes feitos hoje</h2>
-      <div id="eventosHojeList"></div>
-    </div>
-  </section>
-
-  <!-- ================= HISTÓRICO ================= -->
-  <section class="screen" id="screen-historico">
-    <div class="card">
-      <h2>Histórico de trocas e calibrações</h2>
-      <div id="historicoList"></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="shareWhats('historico')">📲 Enviar resumo</button>
-      <button class="btn btn-danger" onclick="confirmarLimparHistorico()">🗑️ Limpar hoje</button>
-    </div>
-  </section>
-
-  <!-- ================= PAINEL MONITOR ================= -->
-  <section class="screen" id="screen-painel">
-    <div class="card">
-      <h2>Painel do monitor</h2>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="v" id="pClock">--:--</div><div class="l">Hora atual</div></div>
-        <div class="kpi"><div class="v" id="pProxima">--:--</div><div class="l">Próxima troca</div></div>
-        <div class="kpi"><div class="v" id="pRestante">--:--</div><div class="l">Tempo restante</div></div>
-        <div class="kpi"><div class="v" id="pStatus">--</div><div class="l">Status</div></div>
-        <div class="kpi"><div class="v" id="pTrocas">0</div><div class="l">Trocas hoje</div></div>
-        <div class="kpi"><div class="v" id="pOperadores">20</div><div class="l">Operadores</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>✅ Quem já confirmou a posição hoje</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Lista de todo mundo que fez check-in hoje, mais recente primeiro.</p>
-      <div id="pCheckinsHoje"></div>
-    </div>
-    <div class="card">
-      <h2>⚠️ Divergências de posição agora</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Operadores que marcaram estar em operação diferente da calculada.</p>
-      <div id="pDivergencias"></div>
-    </div>
-    <div class="card">
-      <h2>Agenda de sábados</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:12px;">
-        Marque quais sábados têm expediente (12h às 18h, com pausa de 15min pro café às 15h). Os não marcados
-        ficam como folga automaticamente.
-      </p>
-      <div id="agendaSabadosList"></div>
-    </div>
-    <div class="card">
-      <h2>Ações do turno</h2>
-      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:12px;">
-        O turno reinicia automaticamente todo dia à meia-noite (as trocas ficam salvas por data).
-        Use "Novo turno" apenas se quiser apagar as trocas de hoje e recomeçar do zero.
-      </p>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="confirmarLimparHistorico()">🔄 Novo turno (limpar trocas de hoje)</button>
-        <button class="btn btn-ghost" onclick="toggleFullscreen()">⛶ Tela cheia</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Backup</h2>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="exportarBackup()">⬇️ Exportar .json</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📁 Restaurar</button>
-      </div>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarBackup(event)">
     </div>
   </section>
 
@@ -667,6 +469,95 @@ nav.bottom button.active{color:var(--vw-cyan);}
       <div id="equipeAtivaList"></div>
     </div>
   </section>
+  <section class="screen" id="screen-pais">
+    <div class="card">
+      <h2>Consulta por país</h2>
+      <select id="selPais" onchange="renderPais()"></select>
+      <input type="date" id="paisData" onchange="renderPais()">
+      <div id="paisResumo" class="kpi-grid" style="margin-top:4px;"></div>
+    </div>
+    <div class="card">
+      <h2 id="paisAgendaTitulo">Agenda do dia</h2>
+      <div id="paisAgenda"></div>
+    </div>
+    <div class="card" id="paisCheckinManualCard" style="display:none;">
+      <h2>Check-in manual</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Use quando o operador não tem celular à mão ou não confirmou sozinho.</p>
+      <div id="paisCheckinManualStatus" style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;"></div>
+      <button class="btn btn-primary" id="paisConfirmarManualBtn" onclick="confirmarCheckinManual()">✅ Confirmar posição calculada por ele</button>
+      <button class="btn btn-ghost" onclick="toggleCorrecaoManualBox()">📍 Colocar em outra operação</button>
+      <div id="paisCorrecaoManualBox" style="display:none;margin-top:12px;">
+        <div class="section-title">Selecione a operação real</div>
+        <div class="grid-countries" id="paisCorrecaoManualGrid" style="grid-template-columns:1fr;"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="gerarImagem('pais')">📸 Enviar sequência do dia</button>
+  </section>
+
+  <!-- ================= CONSULTA HORÁRIO ================= -->
+  <section class="screen" id="screen-historico">
+    <div class="card">
+      <h2>Histórico de trocas e calibrações</h2>
+      <div id="historicoList"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="shareWhats('historico')">📲 Enviar resumo</button>
+      <button class="btn btn-danger" onclick="confirmarLimparHistorico()">🗑️ Limpar hoje</button>
+    </div>
+  </section>
+
+  <!-- ================= PAINEL MONITOR ================= -->
+  <section class="screen" id="screen-painel">
+    <div class="card">
+      <h2>Painel do monitor</h2>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="v" id="pClock">--:--</div><div class="l">Hora atual</div></div>
+        <div class="kpi"><div class="v" id="pProxima">--:--</div><div class="l">Próxima troca</div></div>
+        <div class="kpi"><div class="v" id="pRestante">--:--</div><div class="l">Tempo restante</div></div>
+        <div class="kpi"><div class="v" id="pStatus">--</div><div class="l">Status</div></div>
+        <div class="kpi"><div class="v" id="pTrocas">0</div><div class="l">Trocas hoje</div></div>
+        <div class="kpi"><div class="v" id="pOperadores">20</div><div class="l">Operadores</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>✅ Quem já confirmou a posição hoje</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Lista de todo mundo que fez check-in hoje, mais recente primeiro.</p>
+      <div id="pCheckinsHoje"></div>
+    </div>
+    <div class="card">
+      <h2>⚠️ Divergências de posição agora</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Operadores que marcaram estar em operação diferente da calculada.</p>
+      <div id="pDivergencias"></div>
+    </div>
+    <div class="card">
+      <h2>Agenda de sábados</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:12px;">
+        Marque quais sábados têm expediente (12h às 18h, com pausa de 15min pro café às 15h). Os não marcados
+        ficam como folga automaticamente.
+      </p>
+      <div id="agendaSabadosList"></div>
+    </div>
+    <div class="card">
+      <h2>Ações do turno</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:12px;">
+        O turno reinicia automaticamente todo dia à meia-noite (as trocas ficam salvas por data).
+        Use "Novo turno" apenas se quiser apagar as trocas de hoje e recomeçar do zero.
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="confirmarLimparHistorico()">🔄 Novo turno (limpar trocas de hoje)</button>
+        <button class="btn btn-ghost" onclick="toggleFullscreen()">⛶ Tela cheia</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Backup</h2>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="exportarBackup()">⬇️ Exportar .json</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📁 Restaurar</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarBackup(event)">
+    </div>
+  </section>
+
 
 </main>
 
@@ -743,11 +634,11 @@ const COUNTRIES = [
 
 const OPERATIONS = [
   "Sequenciamento Eixo Traseiro","Escapamento","Amortecedor no Eixo Traseiro L/E — Pré Fahrwerk","Amortecedor no Eixo Traseiro L/D — Pré Fahrwerk",
-  "Aperto do Coxim Motor/Câmbio","Chapa Defletora","Tanque de Combustível L/E — Pré Fahrwerk","Tanque de Combustível L/D — Pré Fahrwerk",
-  "Apontamento Alavanca de Mudanças","Aperto da Alavanca de Mudanças","Aperto do Coxim Motor/Câmbio",
+  "Aperto do Coxim Motor/Câmbio/Chapa","Chapa Defletora","Tanque de Combustível L/E — Pré Fahrwerk","Tanque de Combustível L/D — Pré Fahrwerk",
+  "Apontamento Alavanca de Mudanças","Aperto da Alavanca de Mudanças","Aperto do Coxim Motor/Câmbio/amortecedor carroceria L/E",
   "Amortecedor na Carroceria L/E","Tanque de Combustível L/E","Quadro Auxiliar L/E","Eixo Traseiro L/E",
   "Amortecedor na Carroceria L/D","Tanque de Combustível L/D","Quadro Auxiliar L/D","Eixo Traseiro L/D",
-  "Aperto do Coxim Motor/Câmbio"
+  "Aperto do Coxim Motor/Câmbio/Sequencia do eixo traseiro"
 ];
 
 // Cada slot representa um instante em que o cronograma pode mudar.
@@ -1437,21 +1328,26 @@ function renderMinhaPosicao(){
     if(chk) comChk.push({o, chk}); else semChk.push({o});
   });
   comChk.sort((a,b)=> a.chk.opIdxReal - b.chk.opIdxReal);
-  const cardsHtml = comChk.map(({o,chk})=>{
+  const itens = comChk.map(({o,chk})=>{
     const fora = chk.opIdxReal===-1;
     const cor = fora ? "var(--red)" : (chk.bateu ? "var(--green)" : "var(--yellow)");
     const txt = fora ? `🚫 marcado às ${chk.hora}` : (chk.bateu ? `✅ confirmado às ${chk.hora}` : `⚠️ marcado às ${chk.hora}`);
-    return `<div class="op-card${o.id===myId?" sel":""}" onclick="tocarCardPosicao(${o.id})">
-      <div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
-      <div class="opname">${opLabel(chk.opIdxReal)}</div>
-      <span class="badgeop" style="background:${cor}22;color:${cor};">${txt}</span>
-    </div>`;
-  }).join("") + semChk.map(({o})=>`
-    <div class="op-card${o.id===myId?" sel":""}" onclick="tocarCardPosicao(${o.id})">
-      <div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
-      <div class="opname" style="color:var(--txt-dim);">Fora do revezamento</div>
-    </div>`).join("");
-  setInnerHtmlIfChanged(document.getElementById("mpEscolhaGrid"), cardsHtml);
+    return {
+      key: o.id,
+      cls: "op-card" + (o.id===myId ? " sel" : ""),
+      onclickAttr: `tocarCardPosicao(${o.id})`,
+      html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+        <div class="opname">${opLabel(chk.opIdxReal)}</div>
+        <span class="badgeop" style="background:${cor}22;color:${cor};">${txt}</span>`
+    };
+  }).concat(semChk.map(({o})=>({
+    key: o.id,
+    cls: "op-card" + (o.id===myId ? " sel" : ""),
+    onclickAttr: `tocarCardPosicao(${o.id})`,
+    html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+      <div class="opname" style="color:var(--txt-dim);">Fora do revezamento</div>`
+  })));
+  reconcileGrid(document.getElementById("mpEscolhaGrid"), itens);
 
   if(myId===null || !findOperator(roster, myId)){
     confirmCard.style.display = "none";
@@ -1482,10 +1378,12 @@ function renderMinhaPosicao(){
     document.getElementById("mpCorrecaoToggleBtn").style.display = "none";
     document.getElementById("mpCorrecaoLabel").textContent = `Selecione a operação em que você está/vai estar (${ctx.tipo==="atual"?"agora":ctx.label})`;
     document.getElementById("mpCorrecaoBox").style.display = "";
-    setInnerHtmlIfChanged(document.getElementById("mpCorrecaoGrid"),
-      `<div class="op-card" onclick="submitCheckin(-1, null, false, mpCtx)" style="border-color:var(--red);"><div class="opname">🚫 Fora do revezamento</div></div>` +
-      OPERATIONS.map((nome,i)=>`
-      <div class="op-card" onclick="submitCheckin(${i}, null, false, mpCtx)"><div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div></div>`).join(""));
+    reconcileGrid(document.getElementById("mpCorrecaoGrid"), [
+      {key:"fora", cls:"op-card", onclickAttr:`submitCheckin(-1, null, false, mpCtx)`, html:`<div class="opname" style="color:var(--red);">🚫 Fora do revezamento</div>`}
+    ].concat(OPERATIONS.map((nome,i)=>({
+      key:i, cls:"op-card", onclickAttr:`submitCheckin(${i}, null, false, mpCtx)`,
+      html:`<div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div>`
+    }))));
   } else {
     meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
       <div class="opnow">${perguntaTxt}</div>
@@ -1497,10 +1395,12 @@ function renderMinhaPosicao(){
     document.getElementById("mpCorrecaoToggleBtn").style.display = "";
     document.getElementById("mpCorrecaoLabel").textContent = "Selecione onde você está de verdade";
     document.getElementById("mpCorrecaoBox").style.display = "none";
-    setInnerHtmlIfChanged(document.getElementById("mpCorrecaoGrid"),
-      `<div class="op-card" onclick="submitCheckin(-1, null, false, mpCtx)" style="border-color:var(--red);"><div class="opname">🚫 Fora do revezamento</div></div>` +
-      OPERATIONS.map((nome,i)=>`
-      <div class="op-card" onclick="submitCheckin(${i}, null, false, mpCtx)"><div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div></div>`).join(""));
+    reconcileGrid(document.getElementById("mpCorrecaoGrid"), [
+      {key:"fora", cls:"op-card", onclickAttr:`submitCheckin(-1, null, false, mpCtx)`, html:`<div class="opname" style="color:var(--red);">🚫 Fora do revezamento</div>`}
+    ].concat(OPERATIONS.map((nome,i)=>({
+      key:i, cls:"op-card", onclickAttr:`submitCheckin(${i}, null, false, mpCtx)`,
+      html:`<div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div>`
+    }))));
   }
 
   const meuCheckin = liveCheckins[myId];
@@ -1705,22 +1605,52 @@ function renderMeusHorarios(){
     </div>
   `;
 
+  // Se o operador já confirmou a posição HOJE, isso dá uma referência real: a
+  // diferença entre o que ele confirmou e o que o motor tinha calculado pra
+  // aquele horário. Aplicando essa mesma diferença em cima do cálculo de
+  // qualquer outro horário — inclusive em dias futuros — a agenda projeta a
+  // posição real dele adiante, sem se limitar ao dia da confirmação (o motor
+  // de cálculo já sabe continuar a sequência de um dia pro outro sozinho).
+  const chkAncora = liveCheckins[myId]; // sempre a confirmação de HOJE, não do dia sendo visto
+  const offsetValido = chkAncora && chkAncora.opIdxReal!==-1 && chkAncora.opIdxCalc!=null;
+  const offset = offsetValido ? (((chkAncora.opIdxReal - chkAncora.opIdxCalc) % OPERATIONS.length) + OPERATIONS.length) % OPERATIONS.length : 0;
+
+  const checkinsDoDia = getCheckinsAlvo({data: dataAlvo});
+  startAlvoListener(todayKey(dataAlvo));
+  const chkDoDia = checkinsDoDia[myId]; // confirmação específica DESSE dia, se houver
+  const slotAgoraOuProximo = st.slot ? st.slot.time : (st.nextSlot ? st.nextSlot.time : null);
+
   let html = "";
   for(const s of getSlots(dataAlvo)){
     if(s.type==="jantar"){
       html += `<div class="row"><span class="l1">${s.time}</span><span class="l2">🍽️ Jantar</span></div>`;
       continue;
     }
-    const posto = findPostoForOperator(myId, s.shift, eventos, assignment, dataAlvo);
     const isNow = isHoje && st.slot && s.time===st.slot.time && st.status!=="antes";
+    // 1) Se ESSE horário específico foi confirmado de verdade, mostra ele exatamente
+    if(isHoje && chkDoDia && slotAgoraOuProximo && s.time===slotAgoraOuProximo){
+      const confirmadoTxt = chkDoDia.opIdxReal===-1
+        ? "🚫 Fora do revezamento"
+        : `${chkDoDia.opIdxReal+1}. ${OPERATIONS[chkDoDia.opIdxReal]}`;
+      html += `<div class="row ${isNow?'now':''}">
+        <span class="l1">${s.time}${s.type==='fim'?' (fim)':''}</span>
+        <span class="l2">${confirmadoTxt} <span style="color:var(--green);font-size:11px;">✅ confirmado</span></span>
+      </div>`;
+      continue;
+    }
+    const posto = findPostoForOperator(myId, s.shift, eventos, assignment, dataAlvo);
     if(posto<0){
       html += `<div class="row ${isNow?'now':''}"><span class="l1">${s.time}${s.type==='fim'?' (fim)':''}</span><span class="l2">Fora de linha</span></div>`;
       continue;
     }
     const {opIdx} = resolveOperacaoPosto(posto, s.shift, eventos, assignment, roster, dataAlvo);
+    // 2) Sem confirmação exata desse horário: usa o cálculo, ajustado pela
+    // diferença que a confirmação de hoje revelou (se houver)
+    const opFinal = offsetValido ? (opIdx + offset) % OPERATIONS.length : opIdx;
+    const marcador = offsetValido ? ` <span style="color:var(--vw-cyan);font-size:11px;">🔮 projetado</span>` : "";
     html += `<div class="row ${isNow?'now':''}">
       <span class="l1">${s.time}${s.type==='fim'?' (fim)':''}</span>
-      <span class="l2">${opIdx+1}. ${OPERATIONS[opIdx]}</span>
+      <span class="l2">${opFinal+1}. ${OPERATIONS[opFinal]}${marcador}</span>
     </div>`;
   }
   document.getElementById("mhAgenda").innerHTML = html || `<div class="empty">Sem posto ${isHoje?"hoje":"nessa data"}</div>`;
@@ -1807,6 +1737,7 @@ function renderHome(st){
     // sempre nessa ordem) com o país que vai estar em cada uma quando o turno começar —
     // já considerando a sequência configurada, calibrações e escalações de hoje, não a
     // ordem "crua" dos postos.
+    const itensAntes = [];
     for(let opIdx=0; opIdx<OPERATIONS.length; opIdx++){
       const posto = findPostoForOperacao(opIdx, shift, eventos, assignment, roster);
       const operator = posto>=0 ? resolveOperacaoPosto(posto, shift, eventos, assignment, roster).operator : null;
@@ -1818,24 +1749,32 @@ function renderHome(st){
               ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
               : `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou outro lugar ${chk.hora}</span>`)
         : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);margin-left:4px;">⏳ aguardando</span>`;
-      html += operator ? `<div class="op-card" onclick="abrirPosto(${posto})">
-        <div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
+      itensAntes.push(operator ? {
+        key:opIdx, cls:"op-card", onclickAttr:`abrirPosto(${posto})`,
+        html:`<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
         <div class="opname">${OPERATIONS[opIdx]}</div>
-        <span class="badgeop">Operação ${opIdx+1} · começa às ${st.nextSlot.time}</span>${chkBadge}
-      </div>` : `<div class="op-card vago"><div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago — ninguém escalado</div></div>`;
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+          <span class="badgeop" style="margin-top:0;">Operação ${opIdx+1} · começa às ${st.nextSlot.time}</span>
+          ${chkBadge.replace('margin-left:4px;','margin-top:0;')}
+        </div>`
+      } : {
+        key:opIdx, cls:"op-card vago", onclickAttr:"",
+        html:`<div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago — ninguém escalado</div>`
+      });
     }
-    setInnerHtmlIfChanged(grid, html);
+    reconcileGrid(grid, itensAntes);
     document.getElementById("kpiTrocas").textContent = eventos.length;
     document.getElementById("kpiTurno").textContent = "Aguardando";
     document.getElementById("pTrocas").textContent = eventos.length;
     document.getElementById("pOperadores").textContent = getRoster().length;
     return;
   }
+  const itensAtivo = [];
   for(let opIdx=0; opIdx<OPERATIONS.length; opIdx++){
     const p = findPostoForOperacao(opIdx, shift, eventos, assignment, roster);
     const {operator, pulou} = p>=0 ? resolveOperacaoPosto(p, shift, eventos, assignment, roster) : {operator:null, pulou:false};
     if(!operator){
-      html += `<div class="op-card vago"><div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago — ninguém escalado</div></div>`;
+      itensAtivo.push({key:opIdx, cls:"op-card vago", onclickAttr:"", html:`<div class="flagname">${opIdx+1}. ${OPERATIONS[opIdx]}</div><div class="opname">⚠️ Vago — ninguém escalado</div>`});
       continue;
     }
     const chk = liveCheckins[operator.id];
@@ -1846,13 +1785,17 @@ function renderHome(st){
             ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
             : `<span class="badgeop" style="background:rgba(213,0,0,.18);color:var(--red);margin-left:4px;">⚠️ operador diz que está em outro lugar</span>`)
       : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);margin-left:4px;">⏳ aguardando confirmação</span>`;
-    html += `<div class="op-card" onclick="abrirPosto(${p})">
-      <div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
+    itensAtivo.push({
+      key:opIdx, cls:"op-card", onclickAttr:`abrirPosto(${p})`,
+      html:`<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
       <div class="opname">${OPERATIONS[opIdx]}</div>
-      <span class="badgeop">Operação ${opIdx+1}${operator.allowedOps?" · restrito":""}${pulou?" · 🔀 pulou reserva":""}</span>${chkBadge}
-    </div>`;
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+        <span class="badgeop" style="margin-top:0;">Operação ${opIdx+1}${operator.allowedOps?" · restrito":""}${pulou?" · 🔀 pulou reserva":""}</span>
+        ${chkBadge.replace('margin-left:4px;','margin-top:0;')}
+      </div>`
+    });
   }
-  setInnerHtmlIfChanged(grid, html);
+  reconcileGrid(grid, itensAtivo);
 
   document.getElementById("kpiTrocas").textContent = eventos.length;
   document.getElementById("kpiTurno").textContent = st.status==="ativo"?"Ativo":st.status==="jantar"?"Jantar":st.status==="antes"?"Aguardando":"Encerrado";
@@ -1872,68 +1815,6 @@ function abrirPosto(p){
   }
   goScreen("pais");
 }
-
-/* =========================================================
-   RENDER: CRONOGRAMA COMPLETO
-========================================================= */
-function pausaTag(time){
-  const p = getPausas().find(p=>p.time===time);
-  return p ? `<br><span style="font-size:10px;color:var(--yellow);font-weight:700;">${p.icon} ${p.dur}min</span>` : "";
-}
-function renderCronograma(){
-  const input = document.getElementById("cronoData");
-  const hojeReal = new Date();
-  if(!input.value) input.value = todayKey(hojeReal);
-  const [y,m,d] = input.value.split("-").map(Number);
-  const dataAlvo = new Date(y, m-1, d);
-  const isHoje = todayKey(dataAlvo) === todayKey(hojeReal);
-
-  const roster = getRoster();
-  const assignment = getAssignment();
-  const eventos = isHoje ? getTodayEventos() : []; // datas fora de hoje ainda não têm ajustes do dia
-  const slots = getSlots(dataAlvo);
-  const resumo = document.getElementById("cronoResumo");
-  const table = document.getElementById("cronoTable");
-
-  const tipo = getDiaTipo(dataAlvo);
-  if(tipo==="folga"){
-    const dow = dataAlvo.getDay();
-    resumo.textContent = dow===0 ? "Domingo — sem expediente." : "Sábado sem expediente marcado na Agenda de sábados.";
-    table.innerHTML = "";
-    return;
-  }
-
-  let resumoTxt = tipo==="sabado" ? "Sábado de trabalho (12h às 18h)." : "Dia de semana (15h às 23h45).";
-  if(!isHoje){
-    const hist = loadBaseSeqHistory().slice().sort((a,b)=> a.vigencia.localeCompare(b.vigencia));
-    const dataKey = todayKey(dataAlvo);
-    const baseAplicavel = [...hist].reverse().find(h=>h.vigencia<=dataKey);
-    const ausenciasNessaData = loadAusencias().filter(a=> dataKey>=a.inicio && dataKey<=a.fim);
-    resumoTxt += baseAplicavel ? ` Sequência padrão vigente desde ${fmtDataBR(baseAplicavel.vigencia)}.` : " Usando a sequência padrão original.";
-    if(ausenciasNessaData.length) resumoTxt += ` ${ausenciasNessaData.length} ausência(s) agendada(s) pra essa data.`;
-    resumoTxt += " Trocas/calibrações feitas só no dia ainda não existem nessa prévia.";
-  }
-  resumo.textContent = resumoTxt;
-
-  let html = "<thead><tr><th>Horário</th>" + Array.from({length:N},(_,p)=>`<th>P${p+1}</th>`).join("") + "</tr></thead><tbody>";
-  for(const s of slots){
-    if(s.type==="jantar"){
-      html += `<tr><td><b>${s.time}</b></td><td colspan="${N}" style="color:var(--yellow);font-weight:700;">🍽️ Jantar (sem revezamento)</td></tr>`;
-      continue;
-    }
-    html += `<tr><td><b>${s.time}</b>${s.type==="fim"?" (fim)":""}${isHoje?pausaTag(s.time):""}</td>`;
-    for(let p=0;p<N;p++){
-      const {opIdx, operator} = resolveOperacaoPosto(p, s.shift, eventos, assignment, roster, dataAlvo);
-      html += operator
-        ? `<td><img class="flag sm" src="${operator.flag}" alt=""><br>${opIdx+1}</td>`
-        : `<td style="color:var(--txt-dim);">--</td>`;
-    }
-    html += "</tr>";
-  }
-  html += "</tbody>";
-  table.innerHTML = html;
-}
-
 
 /* =========================================================
    RENDER: CONSULTA POR PAÍS / OPERADOR
@@ -1956,6 +1837,34 @@ function setSelectHtmlIfChanged(sel, html){
 function setInnerHtmlIfChanged(el, html){
   if(el && el.innerHTML !== html) el.innerHTML = html;
 }
+// Reconciliador por card: atualiza/reordena uma grade sem nunca destruir um card
+// que não mudou. setInnerHtmlIfChanged sozinho reconstrói a grade INTEIRA assim
+// que UM card muda — isso derruba o dedo de qualquer um tocando em outro card
+// naquele instante (o toque é cancelado silenciosamente porque o elemento
+// original sumiu do DOM). Com muita gente confirmando ao mesmo tempo em tempo
+// real, isso vinha impedindo alguns operadores de conseguir marcar a posição.
+// items: [{key, cls, onclickAttr, html}], já na ordem desejada.
+function reconcileGrid(container, items){
+  if(!container) return;
+  const existentes = {};
+  Array.from(container.children).forEach(el=>{ if(el.dataset.key) existentes[el.dataset.key] = el; });
+  const usados = new Set();
+  items.forEach(item=>{
+    const key = String(item.key);
+    usados.add(key);
+    let el = existentes[key];
+    if(!el){
+      el = document.createElement("div");
+      el.dataset.key = key;
+      container.appendChild(el);
+    }
+    if(el.className !== item.cls) el.className = item.cls;
+    if(item.onclickAttr!==undefined && el.getAttribute("onclick") !== item.onclickAttr) el.setAttribute("onclick", item.onclickAttr);
+    if(el.innerHTML !== item.html) el.innerHTML = item.html;
+    if(container.children[items.indexOf(item)] !== el) container.appendChild(el); // reordena sem recriar
+  });
+  Object.keys(existentes).forEach(key=>{ if(!usados.has(key)) existentes[key].remove(); });
+}
 function populateOperatorSelect(sel, list, includeEmpty){
   const html = (includeEmpty ? `<option value="">Selecione...</option>` : "") +
     list.map(o=>`<option value="${o.id}">${o.name}${o.motivo?` (${motivoLabel(o.motivo)})`:''}</option>`).join("");
@@ -1972,20 +1881,6 @@ function refreshDynamicSelects(){
   const prevPais = selPais.value;
   setSelectHtmlIfChanged(selPais, roster.map(o=>`<option value="${o.id}">${o.name}${o.motivo?` (${motivoLabel(o.motivo)})`:''}</option>`).join(""));
   if(prevPais && [...selPais.options].some(op=>op.value===prevPais)) selPais.value = prevPais;
-
-  // Troca: só quem está ativo agora num posto
-  const ativos = [];
-  for(let p=0;p<N;p++){
-    const {operatorId} = resolveAssignment(p, shift, getTodayEventos(), assignment);
-    if(operatorId!=null){ const op = findOperator(roster, operatorId); if(op) ativos.push(op); }
-  }
-  const trocaA = document.getElementById("trocaA");
-  const trocaB = document.getElementById("trocaB");
-  const prevA = trocaA.value, prevB = trocaB.value;
-  populateOperatorSelect(trocaA, ativos, false);
-  populateOperatorSelect(trocaB, ativos, false);
-  if(prevA && ativos.some(o=>String(o.id)===prevA)) trocaA.value = prevA;
-  if(prevB && ativos.some(o=>String(o.id)===prevB)) trocaB.value = prevB; else if(ativos.length>1) trocaB.selectedIndex = 1;
 
   // Equipe: banco e postos
   const bench = benchOperators(roster, assignment);
@@ -2018,25 +1913,6 @@ function refreshDynamicSelects(){
     if(prevAus && roster.some(o=>String(o.id)===prevAus)) ausOperador.value = prevAus;
   }
 }
-function refreshHorarioSelect(){
-  const dataInput = document.getElementById("horarioData");
-  const hojeReal = new Date();
-  if(!dataInput.value) dataInput.value = todayKey(hojeReal);
-  const [y,m,d] = dataInput.value.split("-").map(Number);
-  const dataAlvo = new Date(y, m-1, d);
-  const isHoje = todayKey(dataAlvo) === todayKey(hojeReal);
-
-  const selHorario = document.getElementById("selHorario");
-  const prev = selHorario.value;
-  const slots = getSlots(dataAlvo).filter(s=>s.type!=="fim");
-  setSelectHtmlIfChanged(selHorario, slots.length
-    ? slots.map(s=>`<option value="${s.time}">${s.time}${s.type==="jantar"?" (Jantar)":""}</option>`).join("")
-    : `<option value="">Sem expediente nessa data</option>`);
-  if(prev && slots.some(s=>s.time===prev)) selHorario.value = prev;
-
-  const resumo = document.getElementById("horarioResumo");
-  if(resumo) resumo.textContent = isHoje ? "" : `Prévia de ${fmtDataBR(dataInput.value)} — ainda sem trocas/calibrações feitas nesse dia`;
-}
 // Lista de horários pra popular os selects de "a partir de". Usa os horários de
 // hoje quando hoje tem expediente; se hoje é folga (sábado não marcado, domingo),
 // usa os horários do próximo dia de trabalho — senão o select ficava vazio e
@@ -2049,14 +1925,6 @@ function getWorkSlotsReferencia(){
   return getWorkSlots(ctx.data);
 }
 function ensureSelectsFilled(){
-  const selOperacao = document.getElementById("selOperacao");
-  if(!selOperacao.options.length){
-    selOperacao.innerHTML = OPERATIONS.map((op,i)=>`<option value="${i}">${i+1}. ${op}</option>`).join("");
-  }
-  const trocaHora = document.getElementById("trocaHora");
-  if(!trocaHora.options.length){
-    trocaHora.innerHTML = getWorkSlotsReferencia().map(s=>`<option value="${s.shift}" data-time="${s.time}">${s.time}</option>`).join("");
-  }
   const escalarHora = document.getElementById("escalarHora");
   if(!escalarHora.options.length){
     escalarHora.innerHTML = getWorkSlotsReferencia().map(s=>`<option value="${s.shift}" data-time="${s.time}">${s.time}</option>`).join("");
@@ -2095,9 +1963,14 @@ function renderPais(){
 
   const eventos = isHoje ? getTodayEventos() : [];
   const st = isHoje ? getCurrentState() : {status:"antes", slot:null, nextSlot: getSlots(dataAlvo)[0]};
-  const shiftNow = st.slot ? st.slot.shift : 0;
+  const shiftNow = st.slot ? st.slot.shift : (st.nextSlot ? st.nextSlot.shift : 0);
 
-  const postoAgora = (isHoje && st.status!=="antes") ? findPostoForOperator(id, shiftNow, eventos, assignment, dataAlvo) : -1;
+  // Antes o check-in manual ficava escondido sempre que o turno de hoje ainda não
+  // tinha começado ("antes") — mas o operador já pode se autoconfirmar pro início
+  // do turno nesse período (ver getContextoPosicao), então o monitor precisa poder
+  // fazer o mesmo manualmente. Corrigido: só exclui "antes" quando nem o próximo
+  // turno existe (não deveria acontecer, mas por segurança).
+  const postoAgora = (isHoje && st.nextSlot) ? findPostoForOperator(id, shiftNow, eventos, assignment, dataAlvo) : -1;
   let opAgora = null;
   if(postoAgora>=0){ opAgora = resolveOperacaoPosto(postoAgora, shiftNow, eventos, assignment, roster, dataAlvo).opIdx; }
 
@@ -2136,10 +2009,12 @@ function renderPais(){
           : `⚠️ Marcado em "${opLabel(chk.opIdxReal)}" às ${chk.hora}${chk.porMonitor?" (pelo monitor)":""}, diferente do cálculo`)
       : "⏳ Ainda não confirmado.";
     document.getElementById("paisConfirmarManualBtn").textContent = `✅ Confirmar em: ${opLabel(opAgora)}`;
-    setInnerHtmlIfChanged(document.getElementById("paisCorrecaoManualGrid"),
-      `<div class="op-card" onclick="submitCheckin(-1, ${id}, true)" style="border-color:var(--red);"><div class="opname">🚫 Fora do revezamento</div></div>` +
-      OPERATIONS.map((nome,i)=>`
-      <div class="op-card" onclick="submitCheckin(${i}, ${id}, true)"><div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, {data:dataAlvo}, id)}</div></div>`).join(""));
+    reconcileGrid(document.getElementById("paisCorrecaoManualGrid"), [
+      {key:"fora", cls:"op-card", onclickAttr:`submitCheckin(-1, ${id}, true)`, html:`<div class="opname" style="color:var(--red);">🚫 Fora do revezamento</div>`}
+    ].concat(OPERATIONS.map((nome,i)=>({
+      key:i, cls:"op-card", onclickAttr:`submitCheckin(${i}, ${id}, true)`,
+      html:`<div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, {data:dataAlvo}, id)}</div>`
+    }))));
   } else {
     checkinCard.style.display = "none";
   }
@@ -2173,468 +2048,6 @@ function renderPais(){
   document.getElementById("paisAgenda").innerHTML = html || `<div class="empty">Sem posto ${isHoje?"hoje":"nessa data"}</div>`;
 }
 
-/* =========================================================
-   RENDER: CONSULTA POR HORÁRIO
-========================================================= */
-function renderHorario(){
-  const dataInput = document.getElementById("horarioData");
-  const hojeReal = new Date();
-  if(!dataInput.value) dataInput.value = todayKey(hojeReal);
-  const [y,m,d] = dataInput.value.split("-").map(Number);
-  const dataAlvo = new Date(y, m-1, d);
-  const isHoje = todayKey(dataAlvo) === todayKey(hojeReal);
-
-  const tipoDia = getDiaTipo(dataAlvo);
-  if(tipoDia==="folga"){
-    const dow = dataAlvo.getDay();
-    document.getElementById("horarioList").innerHTML = `<div class="empty">${dow===0?"Domingo":"Sábado"} sem expediente${isHoje?"":` em ${fmtDataBR(dataInput.value)}`}.</div>`;
-    return;
-  }
-
-  const roster = getRoster();
-  const assignment = getAssignment();
-  const eventos = isHoje ? getTodayEventos() : [];
-  const time = document.getElementById("selHorario").value;
-  const s = getSlots(dataAlvo).find(x=>x.time===time);
-  if(!s) return;
-  if(s.type==="jantar"){
-    document.getElementById("horarioList").innerHTML = `<div class="empty">🍽️ ${time} é horário de jantar — sem revezamento. As posições permanecem as mesmas de 20:30.</div>`;
-    return;
-  }
-  let html="";
-  const opsVistas = {};
-  for(let p=0;p<N;p++){
-    const {opIdx, operator, pulou} = resolveOperacaoPosto(p, s.shift, eventos, assignment, roster, dataAlvo);
-    if(!operator){ html += `<div class="row"><span class="l1">Posto ${p+1}</span><span class="tag" style="background:var(--txt-dim);">Vago</span></div>`; continue; }
-    opsVistas[opIdx] = (opsVistas[opIdx]||0)+1;
-    html += `<div class="row" style="flex-direction:column;align-items:flex-start;gap:3px;">
-      <span class="l1"><img class="flag sm" src="${operator.flag}" alt=""> ${operator.name}</span>
-      <span class="l2">${opIdx+1}. ${OPERATIONS[opIdx]}${pulou?' <span style="color:var(--vw-cyan);">· 🔀 pulou reserva</span>':''}</span>
-    </div>`;
-  }
-  const conflitos = Object.keys(opsVistas).filter(k=>opsVistas[k]>1);
-  if(conflitos.length){
-    html += `<div class="empty" style="color:var(--yellow);">⚠️ Mais de um posto calculado pra operação ${conflitos.map(c=>Number(c)+1).join(", ")} nesse horário — confira as restrições de operadores emprestados.</div>`;
-  }
-  document.getElementById("horarioList").innerHTML = html;
-}
-
-/* =========================================================
-   RENDER: CONSULTA POR OPERAÇÃO
-========================================================= */
-function renderOperacao(){
-  const eventos = getTodayEventos();
-  const roster = getRoster();
-  const assignment = getAssignment();
-  const opIdx = parseInt(document.getElementById("selOperacao").value || 0);
-  const st = getCurrentState();
-  const shiftNow = st.slot ? st.slot.shift : 0;
-
-  let operAgora = null, operProx = null;
-  if(st.status!=="antes"){
-    const p = findPostoForOperacao(opIdx, shiftNow, eventos, assignment, roster);
-    if(p>=0) operAgora = resolveOperacaoPosto(p, shiftNow, eventos, assignment, roster).operator;
-  }
-  if(st.nextSlot && st.nextSlot.type!=="jantar"){
-    const p = findPostoForOperacao(opIdx, st.nextSlot.shift, eventos, assignment, roster);
-    if(p>=0) operProx = resolveOperacaoPosto(p, st.nextSlot.shift, eventos, assignment, roster).operator;
-  }
-  document.getElementById("operacaoAgora").innerHTML = `
-    <div class="kpi"><div class="v">${operAgora?`<img class="flag lg" src="${operAgora.flag}" alt="">`:"--"}</div><div class="l">${operAgora?operAgora.name:"Ninguém no momento"}</div></div>
-    <div class="kpi"><div class="v">${operProx?`<img class="flag lg" src="${operProx.flag}" alt="">`:"--"}</div><div class="l">${operProx?operProx.name:"—"} (próximo)</div></div>
-  `;
-
-  let html="";
-  for(const s of getSlots()){
-    if(s.type==="jantar"){
-      html += `<div class="row"><span class="l1">${s.time}</span><span class="l2">🍽️ Jantar</span></div>`;
-      continue;
-    }
-    const p = findPostoForOperacao(opIdx, s.shift, eventos, assignment, roster);
-    const operator = p>=0 ? resolveOperacaoPosto(p, s.shift, eventos, assignment, roster).operator : null;
-    const isNow = st.slot && s.time===st.slot.time && st.status!=="antes";
-    html += `<div class="row ${isNow?'now':''}">
-      <span class="l1">${s.time}${s.type==='fim'?' (fim)':''}</span>
-      <span class="l2">${operator? `<img class="flag sm" src="${operator.flag}" alt=""> ${operator.name}` : "--"}</span>
-    </div>`;
-  }
-  document.getElementById("operacaoHist").innerHTML = html;
-}
-
-/* =========================================================
-   ABAS (Troca / Configuração)
-========================================================= */
-function setAjusteTab(tab){
-  document.getElementById("tabTroca").classList.toggle("active", tab==="troca");
-  document.getElementById("tabConfig").classList.toggle("active", tab==="config");
-  document.getElementById("painelTroca").style.display = tab==="troca" ? "" : "none";
-  document.getElementById("painelConfig").style.display = tab==="config" ? "" : "none";
-  if(tab==="config"){ syncConfigWizardFromEvents(); renderConfigWizard(); }
-}
-
-/* =========================================================
-   TROCAS (agora entre OPERADORES — o app acha o posto de cada um)
-========================================================= */
-function pedirConfirmacaoTroca(){
-  const roster = getRoster();
-  const idA = parseInt(document.getElementById("trocaA").value);
-  const idB = parseInt(document.getElementById("trocaB").value);
-  if(idA===idB){ toast("Selecione dois operadores diferentes"); return; }
-  const horaSel = document.getElementById("trocaHora");
-  const shift = parseInt(horaSel.value);
-  const time = horaSel.options[horaSel.selectedIndex].dataset.time;
-  const opA = findOperator(roster, idA), opB = findOperator(roster, idB);
-
-  abrirModal(
-    "Confirmar troca",
-    `${opA.name} vai trocar de posto com ${opB.name}, a partir das ${time}. O cronograma futuro será recalculado e o histórico anterior a esse horário não muda. Confirmar?`,
-    ()=>executarTroca(idA,idB,shift,time)
-  );
-}
-function executarTroca(idA,idB,shift,time){
-  const eventos = getTodayEventos();
-  const assignment = getAssignment();
-  const postoA = findPostoForOperator(idA, shift, eventos, assignment);
-  const postoB = findPostoForOperator(idB, shift, eventos, assignment);
-  if(postoA<0 || postoB<0){ toast("Um dos operadores não está escalado nesse horário"); fecharModal(); return; }
-  eventos.push({
-    type:"troca",
-    id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
-    a: postoA, b: postoB, shift, time,
-    obs: document.getElementById("trocaObs").value.trim(),
-    createdAt: new Date().toISOString()
-  });
-  setTodayEventos(eventos);
-  document.getElementById("trocaObs").value="";
-  fecharModal();
-  const roster = getRoster();
-  toast(`Troca confirmada: ${findOperator(roster,idA).name} ↔ ${findOperator(roster,idB).name} às ${time}`);
-  renderAll();
-}
-
-/* =========================================================
-   CONFIGURAÇÃO GUIADA — passa pelas 20 operações em ordem
-   (Sequenciamento Eixo Traseiro → ... → última) e, pra cada uma,
-   deixa tocar na bandeira do país que está lá agora. Por baixo,
-   cada toque é uma calibração individual daquele país pra aquela
-   operação, no horário atual — só reaproveita o motor existente.
-========================================================= */
-// O progresso do assistente é sempre reconstruído a partir dos próprios ajustes de hoje
-// (cada passo confirmado grava o operador no evento de calibração correspondente) — não
-// depende de nenhuma "memória" separada, então funciona mesmo se o app for fechado e
-// reaberto no meio da configuração, não importa em que ponto isso aconteça.
-function syncConfigWizardFromEvents(){
-  const eventos = getTodayEventos();
-  const assignment = getAssignment();
-  const passos = eventos.filter(e => e.type==="calibracao" && e.obs==="Configuração guiada da sequência");
-  configDone = {};
-  passos.forEach(p=>{
-    const operatorId = resolveAssignment(p.pais, p.shift, eventos, assignment).operatorId;
-    if(operatorId!=null) configDone[p.operacaoReal] = {operatorId, posto:p.pais, shift:p.shift};
-  });
-  configUsedIds = Object.values(configDone).map(v=>v.operatorId);
-  // próxima operação a configurar = a primeira (na ordem 1→20) que ainda não tem país
-  let next = 0;
-  while(configDone[next]!==undefined && next<OPERATIONS.length) next++;
-  configStep = next;
-}
-function horaDoShift(dateStr, shift){
-  const [y,m,d] = dateStr.split("-").map(Number);
-  const slots = getSlots(new Date(y, m-1, d));
-  const s = slots.find(s=>s.shift===shift && s.type!=="fim");
-  return s ? s.time : "";
-}
-function renderBaseSeqAtualInfo(){
-  const el = document.getElementById("baseSeqAtualInfo");
-  if(!el) return;
-  const hist = loadBaseSeqHistory().slice().sort((a,b)=> baseSeqKey(a.vigencia,a.vigenciaShift).localeCompare(baseSeqKey(b.vigencia,b.vigenciaShift)));
-  if(!hist.length){ el.innerHTML = "Sequência padrão atual: a original (país 1 na operação 1, país 2 na operação 2...)"; return; }
-  const st = getCurrentState();
-  const shiftAgora = st.slot ? st.slot.shift : 0;
-  const hojeKey = baseSeqKey(todayKey(), shiftAgora);
-  const vigente = [...hist].reverse().find(h=>baseSeqKey(h.vigencia,h.vigenciaShift)<=hojeKey);
-  const futura = hist.find(h=>baseSeqKey(h.vigencia,h.vigenciaShift)>hojeKey);
-  const invalidas = hist.filter(h=>!isSequenciaValida(h.offsets));
-  const horaTxt = h => horaDoShift(h.vigencia, h.vigenciaShift||0) || "início do turno";
-
-  let txt = vigente
-    ? (isSequenciaValida(vigente.offsets)
-        ? `Sequência padrão vigente desde ${fmtDataBR(vigente.vigencia)} às ${horaTxt(vigente)}.`
-        : `⚠️ A sequência vigente desde ${fmtDataBR(vigente.vigencia)} às ${horaTxt(vigente)} está com problema (posto duplicado ou faltando) — o app está ignorando ela e usando a original até você salvar uma nova.`)
-    : "Sequência padrão atual: a original.";
-  if(futura) txt += ` Nova sequência já agendada pra valer a partir de ${fmtDataBR(futura.vigencia)} às ${horaTxt(futura)}${!isSequenciaValida(futura.offsets)?" (⚠️ também com problema)":""}.`;
-  if(invalidas.length) txt += ` <span style="color:var(--vw-cyan);text-decoration:underline;cursor:pointer;" onclick="limparSequenciasSalvas()">Apagar sequência(s) salva(s) e voltar à original</span>`;
-  el.innerHTML = txt;
-}
-function limparSequenciasSalvas(){
-  abrirModal("Apagar sequência(s) padrão salva(s)",
-    "Isso apaga toda sequência padrão configurada (vigente ou agendada) e volta pro cálculo original (país 1 na operação 1, país 2 na 2...). Não mexe nos ajustes feitos hoje, nem no banco de operadores. Confirmar?",
-    ()=>{
-      saveBaseSeqHistory([]);
-      fecharModal();
-      toast("Sequência padrão apagada — voltou pro cálculo original");
-      renderBaseSeqAtualInfo();
-      renderAll();
-    }
-  );
-}
-function refreshBaseSeqHoraOptions(){
-  const dataInput = document.getElementById("baseSeqData");
-  const horaSel = document.getElementById("baseSeqHora");
-  if(!dataInput || !horaSel || !dataInput.value) return;
-  const [y,m,d] = dataInput.value.split("-").map(Number);
-  const prev = horaSel.value;
-  const slots = getWorkSlots(new Date(y, m-1, d));
-  horaSel.innerHTML = slots.length
-    ? slots.map(s=>`<option value="${s.shift}">${s.time}</option>`).join("")
-    : `<option value="">Sem expediente nessa data</option>`;
-  if(prev && slots.some(s=>String(s.shift)===prev)) horaSel.value = prev;
-}
-function salvarSequenciaPadrao(){
-  if(Object.keys(configDone).length < OPERATIONS.length){
-    toast("Complete as 20 operações antes de definir como padrão");
-    return;
-  }
-  const vigencia = document.getElementById("baseSeqData").value;
-  if(!vigencia){ toast("Escolha a data de vigência"); return; }
-  const horaSel = document.getElementById("baseSeqHora");
-  if(!horaSel.value){ toast("Escolha o horário de vigência"); return; }
-  const vigenciaShift = parseInt(horaSel.value);
-  const vigenciaHora = horaSel.options[horaSel.selectedIndex].textContent;
-  const offsets = Array(N).fill(0);
-  Object.keys(configDone).forEach(opIdxStr=>{
-    const opIdx = Number(opIdxStr);
-    const posto = configDone[opIdx].posto;
-    offsets[posto] = opIdx;
-  });
-  if(!isSequenciaValida(offsets)){
-    const conflitos = getConfigConflitos();
-    if(conflitos.length){
-      const nomes = conflitos.map(i=>`${i+1}. ${OPERATIONS[i]}`).join(" e ");
-      toast(`As operações ${nomes} ficaram com a mesma posição interna — apague uma delas (🗑️, na lista abaixo) e configure de novo antes de salvar como padrão`);
-    } else {
-      toast("Essa sequência ficou com posto duplicado ou faltando — reinicie a configuração e refaça antes de salvar como padrão");
-    }
-    renderConfigWizard();
-    return;
-  }
-  abrirModal("Definir sequência padrão",
-    `A partir de ${fmtDataBR(vigencia)} às ${vigenciaHora}, o revezamento passa a começar sempre por essa sequência que você acabou de configurar. Isso vale pros próximos dias, até você trocar de novo. Confirmar?`,
-    ()=>{
-      // substitui se já tinha uma sequência pra essa mesma data+horário
-      const hist = loadBaseSeqHistory().filter(h=>!(h.vigencia===vigencia && (h.vigenciaShift||0)===vigenciaShift));
-      hist.push({vigencia, vigenciaShift, offsets, createdAt:new Date().toISOString()});
-      saveBaseSeqHistory(hist);
-      fecharModal();
-      toast(`Sequência padrão definida a partir de ${fmtDataBR(vigencia)} às ${vigenciaHora}`);
-      renderBaseSeqAtualInfo();
-      renderAll();
-    }
-  );
-}
-function irParaOperacaoConfig(opIdx){
-  configStep = opIdx;
-  renderConfigWizard();
-  const card = document.getElementById("configPickerCard");
-  if(card && card.scrollIntoView) card.scrollIntoView({behavior:"smooth", block:"start"});
-}
-function apagarPassoConfig(opIdx){
-  const info = configDone[opIdx];
-  abrirModal("Apagar essa operação configurada",
-    `Isso libera a operação ${opIdx+1} pra você escolher outro país. As outras operações já configuradas não mudam. Confirmar?`,
-    ()=>{
-      let eventos = getTodayEventos().filter(e =>
-        !(e.type==="calibracao" && e.obs==="Configuração guiada da sequência" && e.operacaoReal===opIdx)
-      );
-      if(info){
-        // só remove a escalação junto se nenhuma outra operação configurada ainda depender desse posto
-        const aindaUsado = eventos.some(e => e.type==="calibracao" && e.obs==="Configuração guiada da sequência" && e.pais===info.posto);
-        if(!aindaUsado){
-          eventos = eventos.filter(e => !(e.type==="substituicao" && e.obs==="Configuração guiada da sequência" && e.posto===info.posto));
-        }
-      }
-      setTodayEventos(eventos);
-      fecharModal();
-      syncConfigWizardFromEvents();
-      renderConfigWizard();
-      renderAll();
-      toast(`Operação ${opIdx+1} liberada pra reconfigurar`);
-    }
-  );
-}
-let configStep = 0;
-let configUsedIds = [];
-let configDone = {};
-let configSnapshotAssignment = null;
-syncConfigWizardFromEvents();
-function reiniciarConfigWizard(){
-  // desfaz tudo que foi feito nessa sessão da configuração guiada: remove os eventos
-  // marcados por ela hoje e devolve os postos escalados ao estado de antes de começar
-  const eventos = getTodayEventos().filter(e => e.obs !== "Configuração guiada da sequência");
-  setTodayEventos(eventos);
-  if(configSnapshotAssignment){
-    saveAssignment([...configSnapshotAssignment]);
-    configSnapshotAssignment = null;
-  }
-  syncConfigWizardFromEvents();
-  renderConfigWizard();
-  renderAll();
-}
-function operadoresAtivosAgora(){
-  const roster = getRoster();
-  const assignment = getAssignment();
-  const eventos = getTodayEventos();
-  const st = getCurrentState();
-  const shift = st.slot ? st.slot.shift : 0;
-  const ativos = [];
-  for(let p=0;p<N;p++){
-    const {operatorId} = resolveAssignment(p, shift, eventos, assignment);
-    if(operatorId!=null){ const o = findOperator(roster, operatorId); if(o) ativos.push(o); }
-  }
-  return ativos;
-}
-function operadoresDisponiveisParaConfig(){
-  const roster = getRoster();
-  const hoje = new Date();
-  // roster inteiro (os 32), menos quem está de ausência agendada pra hoje
-  return roster.filter(o => !isAusenteEm(o.id, hoje));
-}
-// Detecta operações cujo país configurado caiu na mesma posição interna (posto) —
-// isso pode acontecer quando um país "no banco" é escalado durante o assistente e o
-// posto temporário dele (= o número do passo) coincide com o posto real de outro país
-// configurado em outro passo. Usado pra dar um aviso específico, em vez de genérico.
-function getConfigConflitos(){
-  const porPosto = {};
-  const conflitantes = new Set();
-  Object.keys(configDone).forEach(opIdxStr=>{
-    const opIdx = Number(opIdxStr);
-    const posto = configDone[opIdx].posto;
-    if(porPosto[posto]!==undefined){
-      conflitantes.add(porPosto[posto]);
-      conflitantes.add(opIdx);
-    } else {
-      porPosto[posto] = opIdx;
-    }
-  });
-  return [...conflitantes].sort((a,b)=>a-b);
-}
-function renderConfigWizard(){
-  const grid = document.getElementById("configGrid");
-  const progress = document.getElementById("configProgress");
-  const opTitle = document.getElementById("configOpTitle");
-  const done = document.getElementById("configDone");
-  const feitasCard = document.getElementById("configFeitasCard");
-  const feitasList = document.getElementById("configFeitasList");
-
-  const roster = getRoster();
-  const feitos = Object.keys(configDone).map(Number).sort((a,b)=>a-b);
-  const conflitos = new Set(getConfigConflitos());
-  if(feitos.length){
-    feitasCard.style.display = "";
-    feitasList.innerHTML = OPERATIONS.map((opNome,opIdx)=>{
-      const info = configDone[opIdx];
-      if(info){
-        const o = findOperator(roster, info.operatorId);
-        const emConflito = conflitos.has(opIdx);
-        return `<div class="row">
-          <span class="l1"${emConflito?' style="color:var(--red);"':''}>${opIdx+1}. ${opNome}${o?` — <img class="flag sm" src="${o.flag}" alt=""> ${o.name}`:""}</span>
-          ${emConflito?'<span class="tag" style="background:var(--red);color:#fff;">⚠️ Posição duplicada</span>':''}
-          <span class="icon-btn" style="cursor:pointer;" onclick="apagarPassoConfig(${opIdx})">🗑️</span>
-        </div>`;
-      }
-      return `<div class="row" style="cursor:pointer;" onclick="irParaOperacaoConfig(${opIdx})">
-        <span class="l1" style="color:var(--yellow);">${opIdx+1}. ${opNome}</span>
-        <span class="tag" style="background:var(--yellow);color:#1a1400;">⚠️ Pendente</span>
-      </div>`;
-    }).join("");
-  } else {
-    feitasCard.style.display = "none";
-  }
-
-  if(configStep>=OPERATIONS.length){
-    grid.style.display="none"; opTitle.style.display="none"; done.style.display="block";
-    progress.textContent = "20 de 20 operações configuradas";
-    if(configSnapshotAssignment){ configSnapshotAssignment = null; }
-    const box = document.getElementById("configSalvarPadraoBox");
-    box.style.display = "";
-    const dataInput = document.getElementById("baseSeqData");
-    if(!dataInput.value) dataInput.value = todayKey(proximaSegunda());
-    refreshBaseSeqHoraOptions();
-    renderBaseSeqAtualInfo();
-    return;
-  }
-  document.getElementById("configSalvarPadraoBox").style.display = "none";
-  renderBaseSeqAtualInfo();
-  grid.style.display=""; opTitle.style.display=""; done.style.display="none";
-  progress.textContent = `Operação ${configStep+1} de ${OPERATIONS.length} · ${feitos.length} já configuradas`;
-  opTitle.textContent = `${configStep+1}. ${OPERATIONS[configStep]}`;
-
-  const disponiveis = operadoresDisponiveisParaConfig().filter(o=>!configUsedIds.includes(o.id));
-  if(!disponiveis.length){
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">Nenhum país disponível — reinicie a configuração.</div>`;
-    return;
-  }
-  grid.innerHTML = disponiveis.map(o=>`
-    <div class="op-card" onclick="confirmarConfigPasso(${o.id})">
-      <div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
-    </div>`).join("");
-}
-function confirmarConfigPasso(operatorId){
-  syncConfigWizardFromEvents(); // garante que configUsedIds está atualizado antes de checar
-  if(configUsedIds.includes(operatorId)){
-    const roster = getRoster();
-    const o = findOperator(roster, operatorId);
-    toast(`${o?o.name:"Esse país"} já está em outra operação — apague ela primeiro se quiser trocar`);
-    renderConfigWizard();
-    return;
-  }
-  if(configStep===0 && configUsedIds.length===0 && !configSnapshotAssignment){
-    configSnapshotAssignment = [...getAssignment()];
-  }
-  const eventos = getTodayEventos();
-  const assignment = getAssignment();
-  const st = getCurrentState();
-  const shift = st.slot ? st.slot.shift : 0;
-  const time = st.slot ? st.slot.time : (getSlots()[0] ? getSlots()[0].time : SLOTS_SEMANA[0].time);
-  let posto = findPostoForOperator(operatorId, shift, eventos, assignment);
-
-  if(posto<0){
-    // esse operador está no banco — precisa sentar num posto realmente vago (ninguém ativo
-    // ali agora). Nunca usa o número do passo direto: se esse posto já tiver alguém ativo,
-    // usar ele desloca essa pessoa e pode fazer a posição dela colidir com outro passo do
-    // assistente mais na frente. Só cai no número do passo se não sobrar nenhum posto vago.
-    let vago = -1;
-    for(let p=0;p<N;p++){
-      if(resolveAssignment(p, shift, eventos, assignment).operatorId==null){ vago = p; break; }
-    }
-    posto = vago>=0 ? vago : configStep;
-    eventos.push({
-      type:"substituicao",
-      id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
-      posto, operadorId: operatorId, shift, time, obs:"Configuração guiada da sequência",
-      createdAt: new Date().toISOString()
-    });
-    assignment[posto] = operatorId;
-    saveAssignment(assignment);
-  }
-
-  eventos.push({
-    type:"calibracao",
-    modo:"individual",
-    id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
-    pais: posto, shift, time,
-    operacaoReal: configStep,
-    operadorId: operatorId,
-    obs: "Configuração guiada da sequência",
-    createdAt: new Date().toISOString()
-  });
-  setTodayEventos(eventos);
-
-  syncConfigWizardFromEvents();
-  renderConfigWizard();
-  renderTrocasHoje();
-}
-
 function operatorNameForPosto(posto, ev){
   // usado só pra exibir o histórico de forma legível: pega o operador que estava naquele posto
   // no shift do próprio evento (é a melhor referência disponível pro nome exibido)
@@ -2657,15 +2070,6 @@ function eventoResumoHtml(ev){
   }
   return `<span class="l1">🔀 ${operatorNameForPosto(ev.a, ev)} ↔ ${operatorNameForPosto(ev.b, ev)}</span><span class="tag">Troca · ${ev.time}</span>`;
 }
-function renderTrocasHoje(){
-  const eventos = getTodayEventos().slice().sort((x,y)=>x.shift-y.shift || x.createdAt.localeCompare(y.createdAt));
-  const el = document.getElementById("eventosHojeList");
-  if(!eventos.length){ el.innerHTML = `<div class="empty">Nenhum ajuste registrado hoje</div>`; return; }
-  el.innerHTML = eventos.map(ev=>`<div class="row" style="flex-direction:column;align-items:flex-start;gap:4px;">
-      <div style="display:flex;justify-content:space-between;width:100%;flex-wrap:wrap;gap:6px;">${eventoResumoHtml(ev)}</div>
-    </div>`).join("");
-}
-
 /* =========================================================
    EQUIPE — banco de operadores (férias / emprestados) e escalação
 ========================================================= */
@@ -2916,7 +2320,7 @@ function renderHistorico(){
 function confirmarLimparHistorico(){
   abrirModal("Novo turno / limpar ajustes",
     "Isso apaga todas as trocas e calibrações registradas hoje e volta o cronograma ao padrão original. Essa ação não pode ser desfeita. Confirmar?",
-    ()=>{ setTodayEventos([]); syncConfigWizardFromEvents(); fecharModal(); toast("Ajustes de hoje apagados — cronograma padrão restaurado"); renderAll(); }
+    ()=>{ setTodayEventos([]); fecharModal(); toast("Ajustes de hoje apagados — cronograma padrão restaurado"); renderAll(); }
   );
 }
 
@@ -3013,143 +2417,10 @@ async function desenharOperadorImagem(canvas){
   ctx.fillText(`Gerado pelo app Revezamento volta ao mundo Fahrwerk · ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 40, H-26);
 }
 
-async function desenharHorarioImagem(canvas){
-  const roster = getRoster();
-  const assignment = getAssignment();
-  const dataInput = document.getElementById("horarioData");
-  const hojeReal = new Date();
-  const dataStr = dataInput.value || todayKey(hojeReal);
-  const [yy,mm,dd] = dataStr.split("-").map(Number);
-  const dataAlvo = new Date(yy, mm-1, dd);
-  const isHoje = todayKey(dataAlvo) === todayKey(hojeReal);
-  const eventos = isHoje ? getTodayEventos() : [];
-  const time = document.getElementById("selHorario").value;
-  const s = getSlots(dataAlvo).find(x=>x.time===time);
-  const isInicio = getWorkSlots(dataAlvo)[0] && getWorkSlots(dataAlvo)[0].time===time;
-
-  const linhas = [];
-  for(let p=0;p<N;p++){
-    if(s.type==="jantar"){ continue; }
-    const {opIdx, operator} = resolveOperacaoPosto(p, s.shift, eventos, assignment, roster, dataAlvo);
-    if(operator) linhas.push({operator, opIdx});
-  }
-
-  const W=800, headerH=170, rowH=64, footH=60;
-  const H = headerH + Math.max(linhas.length,1)*rowH + footH;
-  canvas.width=W; canvas.height=H;
-  const ctx = canvas.getContext("2d");
-
-  const grad = ctx.createLinearGradient(0,0,W,H);
-  grad.addColorStop(0,"#0a1428"); grad.addColorStop(1,"#050810");
-  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
-  const glow = ctx.createRadialGradient(W*0.85,70,10,W*0.85,70,420);
-  glow.addColorStop(0,"rgba(0,180,255,.22)"); glow.addColorStop(1,"rgba(0,180,255,0)");
-  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
-
-  ctx.fillStyle="#eef2fb"; ctx.font="bold 30px 'Segoe UI',sans-serif"; ctx.textAlign="left";
-  ctx.fillText(isInicio ? `Início do turno — ${time}` : `Situação às ${time}`, 40, 55);
-  ctx.fillStyle="#8b96b3"; ctx.font="15px 'Segoe UI',sans-serif";
-  const dataTxt = dataAlvo.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
-  ctx.fillText(`${dataTxt} · Setor Fahrwerk${isInicio ? " · confira onde começar" : ""}`, 40, 80);
-
-  ctx.strokeStyle="rgba(255,255,255,.14)"; ctx.beginPath(); ctx.moveTo(40,110); ctx.lineTo(W-40,110); ctx.stroke();
-
-  if(s.type==="jantar"){
-    ctx.fillStyle="#ffd600"; ctx.font="20px 'Segoe UI',sans-serif";
-    ctx.fillText("🍽️ Horário de jantar — sem revezamento", 40, 160);
-  } else {
-    let y = headerH;
-    for(const {operator, opIdx} of linhas){
-      const img = (await preloadFlags([operator.flag]))[0];
-      if(img) ctx.drawImage(img, 40, y+10, 44, 32);
-      ctx.fillStyle="#eef2fb"; ctx.font="bold 19px 'Segoe UI',sans-serif";
-      ctx.fillText(operator.name, 96, y+28);
-      ctx.fillStyle="#00b4ff"; ctx.font="16px 'Segoe UI',sans-serif";
-      let opText = `${opIdx+1}. ${OPERATIONS[opIdx]}`;
-      if(opText.length>44) opText = opText.slice(0,43)+"…";
-      ctx.fillText(opText, 96, y+50);
-      ctx.strokeStyle="rgba(255,255,255,.06)"; ctx.beginPath(); ctx.moveTo(40,y+rowH-6); ctx.lineTo(W-40,y+rowH-6); ctx.stroke();
-      y += rowH;
-    }
-  }
-
-  ctx.fillStyle="#5b6478"; ctx.font="12px 'Segoe UI',sans-serif";
-  ctx.fillText(`Gerado pelo app Revezamento volta ao mundo Fahrwerk · ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 40, H-24);
-}
-
-async function desenharCronogramaImagem(canvas){
-  const roster = getRoster();
-  const assignment = getAssignment();
-  const eventos = getTodayEventos();
-  const rows = getSlots().filter(s=>s.type!=="fim");
-  const colW=54, labelW=90;
-  const W = labelW + N*colW + 30;
-  const headerH=170, rowH=42, footH=50;
-  const H = headerH + rows.length*rowH + footH;
-  canvas.width=W; canvas.height=H;
-  const ctx = canvas.getContext("2d");
-
-  const grad = ctx.createLinearGradient(0,0,W,H);
-  grad.addColorStop(0,"#0a1428"); grad.addColorStop(1,"#050810");
-  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
-
-  ctx.fillStyle="#eef2fb"; ctx.font="bold 24px 'Segoe UI',sans-serif"; ctx.textAlign="left";
-  ctx.fillText("REVEZAMENTO FAHRWERK", 24, 42);
-  ctx.fillStyle="#8b96b3"; ctx.font="13px 'Segoe UI',sans-serif";
-  const dataTxt = new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
-  ctx.fillText(`${dataTxt} · Cronograma completo do turno`, 24, 64);
-
-  const st = getCurrentState();
-  const shiftNow = st.slot ? st.slot.shift : 0;
-  const flags = [];
-  for(let p=0;p<N;p++){ flags.push(resolveOperacaoPosto(p, shiftNow, eventos, assignment, roster).operator?.flag || null); }
-  const flagImgs = await preloadFlags(flags);
-
-  const x0 = labelW;
-  ctx.fillStyle="#8b96b3"; ctx.font="bold 11px 'Segoe UI',sans-serif";
-  ctx.fillText("Horário", 8, headerH-10);
-  flagImgs.forEach((img,p)=>{
-    const cx = x0 + p*colW;
-    if(img) ctx.drawImage(img, cx+8, headerH-46, 30, 22);
-    ctx.fillStyle="#8b96b3"; ctx.font="10px 'Segoe UI',sans-serif"; ctx.textAlign="center";
-    ctx.fillText(`P${p+1}`, cx+colW/2, headerH-8);
-    ctx.textAlign="left";
-  });
-
-  ctx.strokeStyle="rgba(255,255,255,.14)";
-  ctx.beginPath(); ctx.moveTo(8,headerH); ctx.lineTo(W-8,headerH); ctx.stroke();
-
-  let y = headerH;
-  for(const s of rows){
-    ctx.fillStyle="#eef2fb"; ctx.font="bold 13px 'Segoe UI',sans-serif"; ctx.textAlign="left";
-    ctx.fillText(s.time, 8, y+rowH/2+5);
-    if(s.type==="jantar"){
-      ctx.fillStyle="#ffd600"; ctx.font="12px 'Segoe UI',sans-serif";
-      ctx.fillText("Jantar (pausa)", labelW+8, y+rowH/2+5);
-    } else {
-      for(let p=0;p<N;p++){
-        const {opIdx, operator} = resolveOperacaoPosto(p, s.shift, eventos, assignment, roster);
-        const cx = x0 + p*colW + colW/2;
-        ctx.fillStyle = operator ? "#eef2fb" : "#5b6478";
-        ctx.font="12px 'Segoe UI',sans-serif"; ctx.textAlign="center";
-        ctx.fillText(operator ? String(opIdx+1) : "-", cx, y+rowH/2+5);
-        ctx.textAlign="left";
-      }
-    }
-    ctx.strokeStyle="rgba(255,255,255,.05)"; ctx.beginPath(); ctx.moveTo(8,y+rowH); ctx.lineTo(W-8,y+rowH); ctx.stroke();
-    y += rowH;
-  }
-
-  ctx.fillStyle="#5b6478"; ctx.font="11px 'Segoe UI',sans-serif";
-  ctx.fillText(`Gerado pelo app Revezamento volta ao mundo Fahrwerk · ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 24, H-20);
-}
-
 async function gerarImagem(mode){
   toast("Gerando imagem...");
   const canvas = document.createElement("canvas");
-  if(mode==="cronograma") await desenharCronogramaImagem(canvas);
-  else if(mode==="horario") await desenharHorarioImagem(canvas);
-  else await desenharOperadorImagem(canvas);
+  await desenharOperadorImagem(canvas);
   canvas.toBlob(async blob=>{
     if(!blob){ toast("Não foi possível gerar a imagem"); return; }
     await compartilharImagem(blob, mode);
@@ -3341,11 +2612,7 @@ function renderAll(){
   if(active==="screen-home") renderHome(st);
   if(active==="screen-minhaposicao") renderMinhaPosicao();
   if(active==="screen-meushorarios") renderMeusHorarios();
-  if(active==="screen-cronograma") renderCronograma();
   if(active==="screen-pais"){ refreshDynamicSelects(); renderPais(); }
-  if(active==="screen-horario"){ refreshHorarioSelect(); renderHorario(); }
-  if(active==="screen-operacao") renderOperacao();
-  if(active==="screen-trocas"){ refreshDynamicSelects(); renderTrocasHoje(); }
   if(active==="screen-historico") renderHistorico();
   if(active==="screen-equipe"){ refreshDynamicSelects(); renderBanco(); renderEquipeAtiva(); renderAusencias(); }
   if(active==="screen-painel"){ document.getElementById("pOperadores").textContent = getRoster().length; renderAgendaSabados(); renderCheckinsHoje(); renderDivergencias(); }
