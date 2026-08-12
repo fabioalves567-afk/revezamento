@@ -1772,8 +1772,14 @@ function renderMinhaPosicao(){
   comChk.sort((a,b)=> a.chk.opIdxReal - b.chk.opIdxReal);
   const itens = comChk.map(({o,chk})=>{
     const fora = chk.opIdxReal===-1;
-    const cor = fora ? "var(--red)" : (chk.bateu ? "var(--green)" : "var(--yellow)");
-    const txt = fora ? `🚫 marcado às ${chk.hora}` : (chk.bateu ? `✅ confirmado às ${chk.hora}` : `⚠️ marcado às ${chk.hora}`);
+    // Qualquer registro de uma operação válida é uma confirmação do operador.
+    // Se for diferente da posição calculada, a sequência pode ter sido
+    // recalculada, mas o card continua verde: o operador confirmou onde está.
+    const registradoEmOperacao = !fora && chk.opIdxReal>=0;
+    const cor = fora ? "var(--red)" : "var(--green)";
+    const txt = fora
+      ? `🚫 marcado às ${chk.hora}`
+      : `✅ confirmado às ${chk.hora}${!chk.bateu ? " • 🔄 recalculado" : ""}`;
     return {
       key: o.id,
       cls: "op-card" + (o.id===myId ? " sel" : ""),
@@ -1857,8 +1863,10 @@ function renderMinhaPosicao(){
 
   const meuCheckin = liveCheckins[myId];
   const info = document.getElementById("mpUltimoCheckin");
-  if(meuCheckin && !meuCheckin.bateu && meuCheckin.opIdxReal>=0 && info){
-    info.textContent = `🔄 Recalculado a partir do seu registro às ${meuCheckin.hora}: ${opLabel(meuCheckin.opIdxReal)} virou a nova referência do revezamento.`;
+  if(meuCheckin && meuCheckin.opIdxReal>=0 && info){
+    info.textContent = meuCheckin.bateu
+      ? `✅ Confirmado às ${meuCheckin.hora}: ${opLabel(meuCheckin.opIdxReal)}.`
+      : `✅ Confirmado às ${meuCheckin.hora}: ${opLabel(meuCheckin.opIdxReal)} • 🔄 sequência recalculada a partir deste registro.`;
   }
   if(ctx.tipo!=="atual" && ctx.tipo!=="jantar" && ctx.tipo!=="inicioHoje"){
     info.textContent = "Fora do turno de hoje — a confirmação acima é pro próximo horário de trabalho.";
@@ -2286,12 +2294,11 @@ function renderHome(st){
       const posto = findPostoForOperacao(opIdx, shift, eventos, assignment, roster);
       const operator = posto>=0 ? resolveOperacaoPosto(posto, shift, eventos, assignment, roster).operator : null;
       const chk = operator ? liveCheckins[operator.id] : null;
-      const recalculadoPorRegistro = chk && !chk.bateu && chk.opIdxReal>=0;
+      const registrado = chk && chk.opIdxReal>=0;
+      const recalculadoPorRegistro = registrado && !chk.bateu;
       const chkBadge = chk
-        ? (recalculadoPorRegistro
-            ? `<span class="badgeop" style="background:rgba(0,174,239,.18);color:var(--vw-cyan);margin-left:4px;">🔄 recalculado pelo registro ${chk.hora}</span>`
-            : chk.bateu
-            ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}</span>`
+        ? (registrado
+            ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}${recalculadoPorRegistro ? ' • 🔄 recalculado' : ''}</span>`
             : chk.opIdxReal===-1
               ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
               : `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou outro lugar ${chk.hora}</span>`)
@@ -2325,12 +2332,11 @@ function renderHome(st){
       continue;
     }
     const chk = liveCheckins[operator.id];
-    const recalculadoPorRegistro = chk && !chk.bateu && chk.opIdxReal>=0;
+    const registrado = chk && chk.opIdxReal>=0;
+    const recalculadoPorRegistro = registrado && !chk.bateu;
     const chkBadge = chk
-      ? (recalculadoPorRegistro
-          ? `<span class="badgeop" style="background:rgba(0,174,239,.18);color:var(--vw-cyan);margin-left:4px;">🔄 recalculado pelo registro ${chk.hora}</span>`
-          : chk.bateu
-          ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}</span>`
+      ? (registrado
+          ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}${recalculadoPorRegistro ? ' • 🔄 recalculado' : ''}</span>`
           : chk.opIdxReal===-1
             ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
             : `<span class="badgeop" style="background:rgba(213,0,0,.18);color:var(--red);margin-left:4px;">⚠️ operador diz que está em outro lugar</span>`)
@@ -2554,9 +2560,9 @@ function renderPais(){
     const status = document.getElementById("paisCheckinManualStatus");
     const chk = liveCheckins[id];
     status.textContent = chk
-      ? (chk.bateu
-          ? `✅ Confirmado às ${chk.hora}${chk.porMonitor?" (pelo monitor)":""}`
-          : `⚠️ Marcado em "${opLabel(chk.opIdxReal)}" às ${chk.hora}${chk.porMonitor?" (pelo monitor)":""}, diferente do cálculo`)
+      ? (chk.opIdxReal>=0
+          ? `✅ Confirmado às ${chk.hora}${chk.porMonitor?" (pelo monitor)":""}${!chk.bateu ? ` • 🔄 sequência recalculada a partir de "${opLabel(chk.opIdxReal)}"` : ""}`
+          : `🚫 Registrado como fora de todo o revezamento às ${chk.hora}`)
       : "⏳ Ainda não confirmado.";
     document.getElementById("paisConfirmarManualBtn").textContent = `✅ Confirmar em: ${opLabel(opAgora)}`;
     reconcileGrid(document.getElementById("paisCorrecaoManualGrid"), [
