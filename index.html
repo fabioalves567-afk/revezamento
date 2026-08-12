@@ -320,6 +320,25 @@ nav.bottom button.active{color:var(--vw-cyan);}
 /* Fora de todo o revezamento: mensagem de status sem alterar o layout dos cards. */
 .opnow{line-height:1.25;}
 </style>
+
+<style id="monitor-card-badge">
+.monitor-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  margin-left:7px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:rgba(0,174,239,.14);
+  color:#009fe3;
+  font-size:10px;
+  font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+</style>
+
 </head>
 <body>
 
@@ -1055,6 +1074,37 @@ function getFreeMappingAtShift(shift, eventos, assignment, roster, baseDate=new 
   });
   return map;
 }
+function getCheckinMapaParaData(baseDate=new Date()){
+  const dataKey = todayKey(baseDate);
+  return dataKey === todayKey() ? liveCheckins : liveCheckinsAlvo;
+}
+
+// Depois que o operador registra a posição real, essa posição vira a âncora
+// do cálculo para o restante do dia. Ex.: calculado Op. 5, operador registra
+// Op. 8 às 11:47 -> a partir do shift registrado, o sistema recalcula o
+// deslocamento desse operador para acompanhar Op. 8 e as próximas rotações.
+function aplicarRegistroComoAncora(operatorId, opIdxBase, shift, baseDate=new Date()){
+  if(operatorId==null || opIdxBase==null || opIdxBase<0) return opIdxBase;
+
+  const checkins = getCheckinMapaParaData(baseDate);
+  const chk = checkins && checkins[operatorId];
+  if(!chk || chk.opIdxReal==null || chk.opIdxReal<0) return opIdxBase;
+
+  const anchorShift = Number.isFinite(Number(chk.shift)) ? Number(chk.shift) : null;
+  const dataChk = chk.dataKey || todayKey(baseDate);
+
+  if(dataChk !== todayKey(baseDate)) return opIdxBase;
+  if(anchorShift===null || shift < anchorShift) return opIdxBase;
+
+  const calcNoRegistro = Number.isFinite(Number(chk.opIdxCalc))
+    ? Number(chk.opIdxCalc)
+    : null;
+  if(calcNoRegistro===null || calcNoRegistro<0) return opIdxBase;
+
+  const delta = ((Number(chk.opIdxReal) - calcNoRegistro) % N + N) % N;
+  return ((opIdxBase + delta) % N + N) % N;
+}
+
 function resolveOperacaoPosto(posto, shift, eventos, assignment, roster, baseDate=new Date()){
   const {offsets, globalShift} = computeOffsets(shift, eventos, baseDate);
   const baseOp = ((offsets[posto] + globalShift) % N + N) % N;
@@ -1062,6 +1112,7 @@ function resolveOperacaoPosto(posto, shift, eventos, assignment, roster, baseDat
   const operator = operatorId==null ? null : findOperator(roster, operatorId);
   let opIdx = baseOp;
   let pulou = false;
+
   if(operator && operator.allowedOps && operator.allowedOps.length){
     const k = operator.allowedOps.length;
     const idx = ((shift - sinceShift) % k + k) % k;
@@ -1070,6 +1121,10 @@ function resolveOperacaoPosto(posto, shift, eventos, assignment, roster, baseDat
     const map = getFreeMappingAtShift(shift, eventos, assignment, roster, baseDate);
     if(map){ opIdx = map[posto]; pulou = opIdx !== baseOp; }
   }
+
+  // O registro real do operador passa a ser a nova âncora do cálculo.
+  opIdx = aplicarRegistroComoAncora(operatorId, opIdx, shift, baseDate);
+
   return {opIdx, operator, operatorId, pulou};
 }
 // Acha qual posto está exibindo uma operação específica num shift (busca pelo resultado final,
@@ -1485,6 +1540,10 @@ function submitCheckin(opIdxReal, operatorIdParam, porMonitor, ctxParam){
     foraDiaInteiro,
     slotsNoDia: dia.totalSlots,
     slotsComPosto: dia.slotsComPosto,
+    // Âncora do recálculo: a partir deste shift, a posição registrada
+    // passa a comandar a sequência futura desse operador.
+    shift: ctx.shift,
+    dataKey: todayKey(ctx.data),
     hora: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
     ts: Date.now(),
     porMonitor: !!porMonitor,
@@ -1719,7 +1778,7 @@ function renderMinhaPosicao(){
       key: o.id,
       cls: "op-card" + (o.id===myId ? " sel" : ""),
       onclickAttr: `tocarCardPosicao(${o.id})`,
-      html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+      html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>${o.name==="Austrália"||o.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}
         <div class="opname">${opLabel(chk.opIdxReal)}</div>
         <span class="badgeop" style="background:${cor}22;color:${cor};">${txt}</span>`
     };
@@ -1727,7 +1786,7 @@ function renderMinhaPosicao(){
     key: o.id,
     cls: "op-card" + (o.id===myId ? " sel" : ""),
     onclickAttr: `tocarCardPosicao(${o.id})`,
-    html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+    html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>${o.name==="Austrália"||o.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}
       <div class="opname" style="color:var(--txt-dim);">Fora do revezamento</div>`
   })));
   reconcileGrid(document.getElementById("mpEscolhaGrid"), itens);
@@ -1757,11 +1816,11 @@ function renderMinhaPosicao(){
 
   if(posto < 0 || opIdx===null){
     if(foraDiaInteiro){
-      meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
+      meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}${operator.name==="Austrália"||operator.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}</div>
         <div class="opnow" style="color:var(--red);">🚫 FORA DE TODO O REVEZAMENTO</div>
         <div class="opname">O sistema verificou todos os ${analiseDia.totalSlots} horários de trabalho de hoje e não encontrou nenhuma escalação para este operador.</div>`;
     } else {
-      meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div><div class="opname">Sem escalação calculada para ${ctx.tipo==="atual"?"agora":ctx.label} (ausência, folga ou fora do revezamento). Você ainda pode marcar manualmente onde está.</div>`;
+      meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}${operator.name==="Austrália"||operator.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}</div><div class="opname">Sem escalação calculada para ${ctx.tipo==="atual"?"agora":ctx.label} (ausência, folga ou fora do revezamento). Você ainda pode marcar manualmente onde está.</div>`;
     }
     semPosto.style.display = "none";
     acoes.style.display = "";
@@ -1778,7 +1837,7 @@ function renderMinhaPosicao(){
       html:`<div class="opname">${opLabel(i)}${badgeOperacaoJaMarcada(i, ctx, myId)}</div>`
     }))));
   } else {
-    meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
+    meuCard.innerHTML = `<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}${operator.name==="Austrália"||operator.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}</div>
       <div class="opnow">${perguntaTxt}</div>
       <div class="opname" style="font-size:14px;font-weight:700;color:var(--txt);margin-top:4px;">${opLabel(opIdx)}</div>`;
     semPosto.style.display = "none";
@@ -1798,6 +1857,9 @@ function renderMinhaPosicao(){
 
   const meuCheckin = liveCheckins[myId];
   const info = document.getElementById("mpUltimoCheckin");
+  if(meuCheckin && !meuCheckin.bateu && meuCheckin.opIdxReal>=0 && info){
+    info.textContent = `🔄 Recalculado a partir do seu registro às ${meuCheckin.hora}: ${opLabel(meuCheckin.opIdxReal)} virou a nova referência do revezamento.`;
+  }
   if(ctx.tipo!=="atual" && ctx.tipo!=="jantar" && ctx.tipo!=="inicioHoje"){
     info.textContent = "Fora do turno de hoje — a confirmação acima é pro próximo horário de trabalho.";
   } else if(meuCheckin){
@@ -2064,9 +2126,9 @@ function renderCafe(){
       cls: "op-card" + (o.id===myId ? " sel" : ""),
       onclickAttr: `tocarCardCafe(${o.id})`,
       html: marcado
-        ? `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+        ? `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>${o.name==="Austrália"||o.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}
            <div class="opname" style="color:var(--green);">☕ Já buscou café às ${marcado.hora}</div>`
-        : `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+        : `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>${o.name==="Austrália"||o.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}
            <div class="opname" style="color:var(--txt-dim);">Ainda não buscou</div>`
     };
   });
@@ -2224,8 +2286,11 @@ function renderHome(st){
       const posto = findPostoForOperacao(opIdx, shift, eventos, assignment, roster);
       const operator = posto>=0 ? resolveOperacaoPosto(posto, shift, eventos, assignment, roster).operator : null;
       const chk = operator ? liveCheckins[operator.id] : null;
+      const recalculadoPorRegistro = chk && !chk.bateu && chk.opIdxReal>=0;
       const chkBadge = chk
-        ? (chk.bateu
+        ? (recalculadoPorRegistro
+            ? `<span class="badgeop" style="background:rgba(0,174,239,.18);color:var(--vw-cyan);margin-left:4px;">🔄 recalculado pelo registro ${chk.hora}</span>`
+            : chk.bateu
             ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}</span>`
             : chk.opIdxReal===-1
               ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
@@ -2233,7 +2298,7 @@ function renderHome(st){
         : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);margin-left:4px;">⏳ aguardando</span>`;
       itensAntes.push(operator ? {
         key:opIdx, cls:"op-card", onclickAttr:`abrirPosto(${posto})`,
-        html:`<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
+        html:`<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}${operator.name==="Austrália"||operator.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}</div>
         <div class="opname">${OPERATIONS[opIdx]}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
           <span class="badgeop" style="margin-top:0;">Operação ${opIdx+1} · começa às ${st.nextSlot.time}</span>
@@ -2260,8 +2325,11 @@ function renderHome(st){
       continue;
     }
     const chk = liveCheckins[operator.id];
+    const recalculadoPorRegistro = chk && !chk.bateu && chk.opIdxReal>=0;
     const chkBadge = chk
-      ? (chk.bateu
+      ? (recalculadoPorRegistro
+          ? `<span class="badgeop" style="background:rgba(0,174,239,.18);color:var(--vw-cyan);margin-left:4px;">🔄 recalculado pelo registro ${chk.hora}</span>`
+          : chk.bateu
           ? `<span class="badgeop" style="background:rgba(0,200,83,.18);color:var(--green);margin-left:4px;">✅ confirmado ${chk.hora}</span>`
           : chk.opIdxReal===-1
             ? `<span class="badgeop" style="background:rgba(255,80,80,.18);color:var(--red);margin-left:4px;">🚫 marcou fora do revezamento ${chk.hora}</span>`
@@ -2269,7 +2337,7 @@ function renderHome(st){
       : `<span class="badgeop" style="background:rgba(255,214,0,.14);color:var(--yellow);margin-left:4px;">⏳ aguardando confirmação</span>`;
     itensAtivo.push({
       key:opIdx, cls:"op-card", onclickAttr:`abrirPosto(${p})`,
-      html:`<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}</div>
+      html:`<div class="flagname"><img class="flag" src="${operator.flag}" alt="${operator.name}">${operator.name}${operator.name==="Austrália"||operator.name==="Argentina" ? '<span class="monitor-badge">🧭 MONITOR</span>' : ""}</div>
       <div class="opname">${OPERATIONS[opIdx]}</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
         <span class="badgeop" style="margin-top:0;">Operação ${opIdx+1}${operator.allowedOps?" · restrito":""}${pulou?" · 🔀 pulou reserva":""}</span>
