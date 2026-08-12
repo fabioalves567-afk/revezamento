@@ -298,6 +298,7 @@ nav.bottom button.active{color:var(--vw-cyan);}
 <nav class="bottom" id="nav-operador" style="display:none;">
   <button data-s="minhaposicao" class="active" onclick="goScreen('minhaposicao')"><span class="ic">📍</span>Minha Posição</button>
   <button data-s="meushorarios" onclick="goScreen('meushorarios')"><span class="ic">📅</span>Meus Horários</button>
+  <button data-s="cafe" onclick="goScreen('cafe')"><span class="ic">☕</span>Café</button>
 </nav>
 
 <nav class="bottom" id="nav-monitor" style="display:none;">
@@ -396,6 +397,16 @@ nav.bottom button.active{color:var(--vw-cyan);}
     <div class="card">
       <h2 id="mhAgendaTitulo">Agenda do dia</h2>
       <div id="mhAgenda"></div>
+    </div>
+  </section>
+
+  <!-- ================= CAFÉ (revezamento de quem vai buscar) ================= -->
+  <section class="screen" id="screen-cafe">
+    <div class="card">
+      <h2>☕ Revezamento do café</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Toque no seu país quando for buscar o café — assim todo mundo vê quem já foi.</p>
+      <div id="cafeSemIdentidade" class="empty" style="display:none;">Escolha seu país em "Minha Posição" primeiro.</div>
+      <div class="grid-countries" id="cafeGrid"></div>
     </div>
   </section>
 
@@ -523,6 +534,15 @@ nav.bottom button.active{color:var(--vw-cyan);}
       <h2>✅ Quem já confirmou a posição hoje</h2>
       <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Lista de todo mundo que fez check-in hoje, mais recente primeiro.</p>
       <div id="pCheckinsHoje"></div>
+    </div>
+    <div class="card">
+      <h2>☕ Café do dia</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Quem já foi buscar e quem ainda não foi. Você pode marcar/desmarcar por qualquer um também.</p>
+      <div class="section-title">Já foram (<span id="cafeJaForamCount">0</span>)</div>
+      <div id="cafeJaForamList"></div>
+      <div class="section-title" style="margin-top:12px;">Ainda não foram (<span id="cafeNaoForamCount">0</span>)</div>
+      <div id="cafeNaoForamList"></div>
+      <button class="btn btn-ghost" style="margin-top:10px;" onclick="reiniciarCafeDoDia()">🔁 Reiniciar revezamento de hoje</button>
     </div>
     <div class="card">
       <h2>⚠️ Divergências de posição agora</h2>
@@ -1031,6 +1051,53 @@ function startCheckinsListener(){
     }
     liveCheckins = novo;
     checkinsCarregadoUmaVez = true;
+    renderAll();
+  });
+}
+
+/* =========================================================
+   CAFÉ — revezamento de quem vai buscar (por dia, reinicia sozinho)
+========================================================= */
+let liveCafe = {}; // {operatorId: {hora, ts, porMonitor}}
+let cafeListenerDate = null;
+function startCafeListener(){
+  if(!fbReady) return;
+  const key = todayKey();
+  if(cafeListenerDate === key) return;
+  if(cafeListenerDate && fbDb){
+    fbDb.ref('revezamento_cafe/'+cafeListenerDate).off();
+  }
+  cafeListenerDate = key;
+  fbDb.ref('revezamento_cafe/'+key).on('value', snap=>{
+    liveCafe = snap.val() || {};
+    renderAll();
+  });
+}
+function marcarCafe(operatorId, porMonitor){
+  const payload = {hora: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}), ts: Date.now(), porMonitor: !!porMonitor};
+  liveCafe[operatorId] = payload;
+  if(fbReady) fbDb.ref('revezamento_cafe/'+todayKey()+'/'+operatorId).set(payload);
+  renderAll();
+}
+function desmarcarCafe(operatorId){
+  delete liveCafe[operatorId];
+  if(fbReady) fbDb.ref('revezamento_cafe/'+todayKey()+'/'+operatorId).remove();
+  renderAll();
+}
+function tocarCardCafe(operatorId){
+  const myId = getMeuOperatorId();
+  if(myId===null || operatorId!==myId){ toast("Só você pode marcar por você mesmo — peça pro monitor se precisar marcar por outra pessoa."); return; }
+  if(liveCafe[myId]) desmarcarCafe(myId); else marcarCafe(myId, false);
+}
+function reiniciarCafeDoDia(){
+  abrirModal_Cafe();
+}
+function abrirModal_Cafe(){
+  abrirModal("Reiniciar café de hoje?", "Isso limpa quem já foi marcado como tendo ido buscar café hoje — todo mundo volta pra lista de \"ainda não foram\".", ()=>{
+    liveCafe = {};
+    if(fbReady) fbDb.ref('revezamento_cafe/'+todayKey()).remove();
+    fecharModal();
+    toast("Revezamento de café reiniciado");
     renderAll();
   });
 }
@@ -1661,6 +1728,50 @@ function renderMeusHorarios(){
     </div>`;
   }
   document.getElementById("mhAgenda").innerHTML = html || `<div class="empty">Sem posto ${isHoje?"hoje":"nessa data"}</div>`;
+}
+
+/* =========================================================
+   RENDER: CAFÉ (revezamento de quem vai buscar)
+========================================================= */
+function renderCafe(){
+  startCafeListener();
+  const roster = getRoster();
+  const myId = getMeuOperatorId();
+  document.getElementById("cafeSemIdentidade").style.display = myId===null ? "" : "none";
+  const itens = roster.map(o=>{
+    const marcado = liveCafe[o.id];
+    return {
+      key: o.id,
+      cls: "op-card" + (o.id===myId ? " sel" : ""),
+      onclickAttr: `tocarCardCafe(${o.id})`,
+      html: marcado
+        ? `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+           <div class="opname" style="color:var(--green);">☕ Já buscou café às ${marcado.hora}</div>`
+        : `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}">${o.name}</div>
+           <div class="opname" style="color:var(--txt-dim);">Ainda não buscou</div>`
+    };
+  });
+  reconcileGrid(document.getElementById("cafeGrid"), itens);
+}
+function renderCafePainel(){
+  startCafeListener();
+  const roster = getRoster();
+  const jaForam = roster.filter(o=>liveCafe[o.id]).sort((a,b)=>(liveCafe[b.id].ts||0)-(liveCafe[a.id].ts||0));
+  const naoForam = roster.filter(o=>!liveCafe[o.id]);
+  document.getElementById("cafeJaForamCount").textContent = jaForam.length;
+  document.getElementById("cafeNaoForamCount").textContent = naoForam.length;
+  const jaForamEl = document.getElementById("cafeJaForamList");
+  jaForamEl.innerHTML = jaForam.length ? jaForam.map(o=>`
+    <div class="row">
+      <span><img class="flag sm" src="${o.flag}" alt="${o.name}"> ${o.name} <span style="color:var(--txt-dim);font-size:11px;">às ${liveCafe[o.id].hora}${liveCafe[o.id].porMonitor?" · pelo monitor":""}</span></span>
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;" onclick="desmarcarCafe(${o.id})">✖ desmarcar</button>
+    </div>`).join("") : `<div class="empty">Ninguém foi ainda.</div>`;
+  const naoForamEl = document.getElementById("cafeNaoForamList");
+  naoForamEl.innerHTML = naoForam.length ? naoForam.map(o=>`
+    <div class="row">
+      <span><img class="flag sm" src="${o.flag}" alt="${o.name}"> ${o.name}</span>
+      <button class="btn btn-primary" style="padding:6px 10px;font-size:12px;" onclick="marcarCafe(${o.id}, true)">☕ marcar</button>
+    </div>`).join("") : `<div class="empty">Todo mundo já foi! ☕</div>`;
 }
 
 /* =========================================================
@@ -2619,10 +2730,11 @@ function renderAll(){
   if(active==="screen-home") renderHome(st);
   if(active==="screen-minhaposicao") renderMinhaPosicao();
   if(active==="screen-meushorarios") renderMeusHorarios();
+  if(active==="screen-cafe") renderCafe();
   if(active==="screen-pais"){ refreshDynamicSelects(); renderPais(); }
   if(active==="screen-historico") renderHistorico();
   if(active==="screen-equipe"){ refreshDynamicSelects(); renderBanco(); renderEquipeAtiva(); renderAusencias(); }
-  if(active==="screen-painel"){ document.getElementById("pOperadores").textContent = getRoster().length; renderAgendaSabados(); renderCheckinsHoje(); renderDivergencias(); }
+  if(active==="screen-painel"){ document.getElementById("pOperadores").textContent = getRoster().length; renderAgendaSabados(); renderCheckinsHoje(); renderCafePainel(); renderDivergencias(); }
   checkAlertaTroca(st);
 }
 
