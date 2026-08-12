@@ -134,19 +134,66 @@ main{max-width:720px;margin:0 auto;padding:16px;}
 .kpi .v{font-size:20px;font-weight:800;color:var(--vw-cyan);}
 .kpi .l{font-size:10.5px;color:var(--txt-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
 
-/* country grid */
-.grid-countries{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-@media(min-width:520px){.grid-countries{grid-template-columns:1fr 1fr 1fr;}}
+/* country / operator grid — responsivo e sem corte de conteúdo */
+.grid-countries{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  width:100%;
+  min-width:0;
+}
+@media(min-width:760px){.grid-countries{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:380px){.grid-countries{grid-template-columns:1fr;gap:8px;}}
 .op-card{
   background:var(--glass);border:1px solid var(--glass-brd);border-radius:14px;padding:11px 12px;
   transition:transform .2s, border-color .2s; cursor:pointer;
+  min-width:0;
+  width:100%;
+  overflow:hidden;
 }
 .op-card:active{transform:scale(.97);}
-.op-card .flagname{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin-bottom:6px;}
-/* variante "picker" — só escolher um país/identidade, sem info extra embaixo (ex: Minha Posição) */
-.op-card.pais-picker{display:flex;align-items:center;padding:12px 14px;}
-.op-card.pais-picker .flagname{margin-bottom:0;font-size:14px;}
-.op-card.pais-picker img.flag{width:28px;height:20px;border-radius:4px;}
+.op-card .flagname{
+  display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin-bottom:6px;
+  min-width:0;
+  overflow:hidden;
+}
+.op-card .flagname > img{flex:0 0 auto;}
+.op-card .flagname{overflow-wrap:anywhere;}
+.op-card .flagname:not(:has(img)){display:block;}
+/* variante picker — mantém identificação em uma linha e badges em uma faixa própria */
+.op-card.pais-picker{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  align-content:flex-start;
+  gap:7px 8px;
+  padding:12px 14px;
+}
+.op-card.pais-picker .flagname{
+  flex:1 1 130px;
+  min-width:0;
+  margin-bottom:0;
+  font-size:14px;
+  line-height:1.2;
+}
+.op-card.pais-picker .card-badges{
+  flex:1 1 100%;
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  width:100%;
+  min-width:0;
+}
+.op-card.pais-picker .badgeop{
+  display:inline-flex;
+  align-items:center;
+  max-width:100%;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  line-height:1.15;
+}
 .op-card.pais-picker.sel{border-color:var(--vw-cyan);background:rgba(0,180,255,.12);}
 .op-card.sel{border-color:var(--vw-cyan);border-width:2px;}
 img.flag{width:24px;height:18px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px var(--img-outline);flex-shrink:0;}
@@ -305,6 +352,7 @@ nav.bottom button.active{color:var(--vw-cyan);}
   <button data-s="home" class="active" onclick="goScreen('home')"><span class="ic">🏠</span>Início</button>
   <button data-s="pais" onclick="goScreen('pais')"><span class="ic">🌍</span>País</button>
   <button data-s="equipe" onclick="goScreen('equipe')"><span class="ic">👥</span>Equipe</button>
+  <button data-s="emprestimos" onclick="goScreen('emprestimos')"><span class="ic">🔀</span>Empréstimos</button>
   <button data-s="historico" onclick="goScreen('historico')"><span class="ic">🕘</span>Histórico</button>
   <button data-s="painel" onclick="goScreen('painel')" style="position:relative;"><span class="ic">📊</span>Painel<span id="navDotPainel" style="display:none;position:absolute;top:2px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--red);"></span></button>
 </nav>
@@ -478,6 +526,31 @@ nav.bottom button.active{color:var(--vw-cyan);}
       <h2>Equipe atual nos 20 postos</h2>
       <div id="equipeAtivaAviso"></div>
       <div id="equipeAtivaList"></div>
+    </div>
+  </section>
+
+  <!-- ================= EMPRÉSTIMOS (revezamento entre setores) ================= -->
+  <section class="screen" id="screen-emprestimos">
+    <div class="card">
+      <h2>Registrar empréstimo</h2>
+      <p style="font-size:12px;color:var(--txt-dim);margin-bottom:10px;">Escolha o setor e a data, depois toque no país pra registrar o empréstimo na hora.</p>
+      <select id="empSetor" onchange="refreshEmpOperadorSelect()"></select>
+      <div class="section-title">Data</div>
+      <input type="date" id="empData">
+      <div class="section-title">Toque no país que foi emprestado</div>
+      <div class="grid-countries" id="empOperadorGrid"></div>
+    </div>
+    <div class="card">
+      <h2>Setores e quem já sabe trabalhar lá</h2>
+      <div id="empSetoresRef"></div>
+    </div>
+    <div class="card">
+      <h2>Histórico de empréstimos</h2>
+      <div id="empHistoricoList"></div>
+    </div>
+    <div class="card">
+      <h2>Quantas vezes cada um já foi emprestado</h2>
+      <div id="empContagemList"></div>
     </div>
   </section>
   <section class="screen" id="screen-pais">
@@ -1100,6 +1173,171 @@ function abrirModal_Cafe(){
     toast("Revezamento de café reiniciado");
     renderAll();
   });
+}
+
+/* =========================================================
+   EMPRÉSTIMOS — revezamento de operadores emprestados pra outros
+   setores. Cada setor tem uma lista fixa de quem já sabe trabalhar
+   lá; quando o setor precisa, o monitor registra quem foi, pra
+   qual setor e em que data. Fica um histórico permanente (não
+   reinicia por dia) sincronizado por Firebase.
+========================================================= */
+const EMPRESTIMOS_SETORES = {
+  "Chicote": ["Portugal","Índia","Itália","Holanda"],
+  "Vidros": ["Espanha","Marrocos","Rússia","Suíça","Áustria"],
+  "Dooless": ["Índia","Arábia Saudita","Grécia"],
+  "Dressup": ["Arábia Saudita","Alemanha","Egito","Estados Unidos"],
+  "Bancos": ["Alemanha","Turquia","Itália"],
+  "Mezanino": ["Alemanha","África do Sul","China"],
+  "Equipe 1": ["Grécia","Espanha","Emirados Árabes Unidos","Coreia do Sul"]
+};
+
+/* =========================================================
+   TREINAMENTO ADQUIRIDO POR EMPRÉSTIMO
+   Regra de negócio:
+   - Se o operador já é treinado no setor, o empréstimo apenas registra a ida.
+   - Se ainda NÃO é treinado, o primeiro empréstimo passa a registrar também
+     que ele foi treinado naquele setor.
+   - O treinamento é permanente e NÃO é removido quando o empréstimo é apagado.
+   - A informação fica sincronizada no Firebase para todos os aparelhos.
+========================================================= */
+const TREINAMENTOS_LOCAL_KEY = "revezamento_fahrwerk_treinamentos_v1";
+function loadTreinamentos(){
+  try{
+    const raw = localStorage.getItem(TREINAMENTOS_LOCAL_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveTreinamentos(data){
+  localStorage.setItem(TREINAMENTOS_LOCAL_KEY, JSON.stringify(data));
+}
+let liveTreinamentos = loadTreinamentos();
+let treinamentosListenerAtivo = false;
+
+function isOperadorTreinadoNoSetor(operator, setor){
+  if(!operator || !setor) return false;
+  // Treinamento original já configurado no aplicativo.
+  const base = EMPRESTIMOS_SETORES[setor] || [];
+  if(base.includes(operator.name)) return true;
+  // Treinamento adquirido em empréstimo anterior.
+  const setorData = liveTreinamentos[setor] || {};
+  return !!setorData[String(operator.id)];
+}
+function getTreinadosNoSetor(setor, roster){
+  return roster.filter(o=>isOperadorTreinadoNoSetor(o,setor));
+}
+function marcarTreinamentoPorEmprestimo(operatorId, setor, data){
+  const roster = getRoster();
+  const operator = findOperator(roster, operatorId);
+  if(!operator || !setor) return {novo:false, registro:null};
+  if(isOperadorTreinadoNoSetor(operator,setor)) return {novo:false, registro:null};
+
+  const registro = {
+    operatorId,
+    setor,
+    trainedAt: new Date().toISOString(),
+    source: "emprestimo",
+    firstLoanDate: data || todayKey()
+  };
+  if(!liveTreinamentos[setor]) liveTreinamentos[setor] = {};
+  liveTreinamentos[setor][String(operatorId)] = registro;
+  saveTreinamentos(liveTreinamentos);
+  return {novo:true, registro};
+}
+function startTreinamentosListener(){
+  if(!fbReady || treinamentosListenerAtivo) return;
+  treinamentosListenerAtivo = true;
+  fbDb.ref('revezamento_treinamentos').on('value', snap=>{
+    liveTreinamentos = snap.val() || {};
+    saveTreinamentos(liveTreinamentos);
+    renderAll();
+  });
+}
+
+/* =========================================================
+   EMPRÉSTIMOS
+========================================================= */
+let liveEmprestimos = {}; // {emprestimoId: {operatorId, setor, data, createdAt}}
+let emprestimosListenerAtivo = false;
+function startEmprestimosListener(){
+  if(!fbReady || emprestimosListenerAtivo) return;
+  emprestimosListenerAtivo = true;
+  fbDb.ref('revezamento_emprestimos').on('value', snap=>{
+    liveEmprestimos = snap.val() || {};
+    renderAll();
+  });
+}
+function refreshEmpOperadorSelect(){
+  startTreinamentosListener();
+  const setorSel = document.getElementById("empSetor");
+  if(!setorSel.options.length){
+    setorSel.innerHTML = Object.keys(EMPRESTIMOS_SETORES).map(s=>`<option value="${s}">${s}</option>`).join("");
+  }
+  const roster = getRoster();
+  const setor = setorSel.value;
+  const contagem = {};
+  Object.values(liveEmprestimos).forEach(e=>{ if(e) contagem[e.operatorId] = (contagem[e.operatorId]||0)+1; });
+
+  // Treinados = lista original do setor + quem adquiriu treinamento em um empréstimo anterior.
+  const treinados = getTreinadosNoSetor(setor, roster);
+  const treinadoIds = new Set(treinados.map(o=>o.id));
+  const outros = roster.filter(o=>!treinadoIds.has(o.id));
+
+  const cardHtml = (o, treinado)=>{
+    const qtd = contagem[o.id] || 0;
+    return {
+      key: o.id,
+      cls: "op-card pais-picker" + (treinado ? " sel" : ""),
+      onclickAttr: `registrarEmprestimo(${o.id})`,
+      html: `<div class="flagname"><img class="flag" src="${o.flag}" alt="${o.name}"><span>${o.name}</span></div>
+        <div class="card-badges"><span class="badgeop">${qtd>0?`${qtd}× emprestado`:"nunca emprestado"}</span>${treinado?' <span class="badgeop" style="background:rgba(0,180,255,.18);color:var(--vw-cyan);">✓ treinado</span>':''}</div>`
+    };
+  };
+  const itens = treinados.map(o=>cardHtml(o,true)).concat(outros.map(o=>cardHtml(o,false)));
+  reconcileGrid(document.getElementById("empOperadorGrid"), itens);
+}
+function registrarEmprestimo(operatorId){
+  const setor = document.getElementById("empSetor").value;
+  const data = document.getElementById("empData").value;
+  if(!setor || isNaN(operatorId) || !data){ toast("Escolha o setor e a data antes de tocar no país"); return; }
+
+  const operator = findOperator(getRoster(), operatorId);
+  if(!operator){ toast("Operador não encontrado"); return; }
+
+  // Primeiro empréstimo para um setor novo = aquisição de treinamento.
+  const treinamento = marcarTreinamentoPorEmprestimo(operatorId, setor, data);
+  const id = Date.now()+"-"+Math.random().toString(36).slice(2,7);
+  const payload = {operatorId, setor, data, createdAt: new Date().toISOString()};
+  liveEmprestimos[id] = payload;
+
+  if(fbReady){
+    // Atualização atômica: registra o empréstimo e, se for novo treinamento,
+    // registra o treinamento no mesmo update do Firebase.
+    const updates = {};
+    updates['revezamento_emprestimos/'+id] = payload;
+    if(treinamento.registro){
+      updates['revezamento_treinamentos/'+setor+'/'+operatorId] = treinamento.registro;
+    }
+    fbDb.ref().update(updates)
+      .then(()=>{
+        toast(treinamento.novo
+          ? `🤝 ${operator.name} emprestado para ${setor} — ✓ agora treinado nesse setor`
+          : `🤝 Empréstimo registrado para ${setor}`);
+      })
+      .catch(()=>toast("⚠️ Sem conexão — empréstimo/treinamento não foram confirmados no servidor"));
+  }else{
+    toast(treinamento.novo
+      ? `🤝 ${operator.name} emprestado — ✓ agora treinado em ${setor}`
+      : "Empréstimo salvo só neste aparelho — Firebase não configurado");
+  }
+  renderAll();
+}
+function apagarEmprestimo(id){
+  // O treinamento adquirido permanece. Apagar o histórico do empréstimo
+  // não significa que o operador desaprendeu o setor.
+  delete liveEmprestimos[id];
+  if(fbReady) fbDb.ref('revezamento_emprestimos/'+id).remove();
+  renderAll();
 }
 
 function shiftAtual(){
@@ -1772,6 +2010,51 @@ function renderCafePainel(){
       <span><img class="flag sm" src="${o.flag}" alt="${o.name}"> ${o.name}</span>
       <button class="btn btn-primary" style="padding:6px 10px;font-size:12px;" onclick="marcarCafe(${o.id}, true)">☕ marcar</button>
     </div>`).join("") : `<div class="empty">Todo mundo já foi! ☕</div>`;
+}
+
+/* =========================================================
+   RENDER: EMPRÉSTIMOS
+========================================================= */
+function renderEmprestimos(){
+  startEmprestimosListener();
+  startTreinamentosListener();
+  refreshEmpOperadorSelect();
+  const dataInput = document.getElementById("empData");
+  if(!dataInput.value) dataInput.value = todayKey();
+
+  const refEl = document.getElementById("empSetoresRef");
+  refEl.innerHTML = Object.entries(EMPRESTIMOS_SETORES).map(([setor,nomes])=>`
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:2px;">
+      <b>${setor}</b>
+      <span style="font-size:12px;color:var(--txt-dim);">${nomes.join(", ")}</span>
+    </div>`).join("");
+
+  const roster = getRoster();
+  const lista = Object.entries(liveEmprestimos)
+    .filter(([id,e])=>e)
+    .sort((a,b)=> b[1].data.localeCompare(a[1].data) || (b[1].createdAt||"").localeCompare(a[1].createdAt||""));
+  const histEl = document.getElementById("empHistoricoList");
+  histEl.innerHTML = lista.length ? lista.map(([id,e])=>{
+    const o = findOperator(roster, e.operatorId);
+    if(!o) return "";
+    return `<div class="row">
+      <span><img class="flag sm" src="${o.flag}" alt="${o.name}"> ${o.name} → <b>${e.setor}</b> <span style="color:var(--txt-dim);font-size:11px;">${fmtDataBR(e.data)}</span></span>
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;" onclick="apagarEmprestimo('${id}')">✖</button>
+    </div>`;
+  }).join("") : `<div class="empty">Nenhum empréstimo registrado ainda.</div>`;
+
+  const contagem = {};
+  lista.forEach(([id,e])=>{ contagem[e.operatorId] = (contagem[e.operatorId]||0)+1; });
+  const contagemOrdenada = Object.entries(contagem).sort((a,b)=>b[1]-a[1]);
+  const contEl = document.getElementById("empContagemList");
+  contEl.innerHTML = contagemOrdenada.length ? contagemOrdenada.map(([opId,qtd])=>{
+    const o = findOperator(roster, Number(opId));
+    if(!o) return "";
+    return `<div class="row">
+      <span><img class="flag sm" src="${o.flag}" alt="${o.name}"> ${o.name}</span>
+      <span class="tag">${qtd}×</span>
+    </div>`;
+  }).join("") : `<div class="empty">Ninguém foi emprestado ainda.</div>`;
 }
 
 /* =========================================================
@@ -2734,6 +3017,7 @@ function renderAll(){
   if(active==="screen-pais"){ refreshDynamicSelects(); renderPais(); }
   if(active==="screen-historico") renderHistorico();
   if(active==="screen-equipe"){ refreshDynamicSelects(); renderBanco(); renderEquipeAtiva(); renderAusencias(); }
+  if(active==="screen-emprestimos") renderEmprestimos();
   if(active==="screen-painel"){ document.getElementById("pOperadores").textContent = getRoster().length; renderAgendaSabados(); renderCheckinsHoje(); renderCafePainel(); renderDivergencias(); }
   checkAlertaTroca(st);
 }
